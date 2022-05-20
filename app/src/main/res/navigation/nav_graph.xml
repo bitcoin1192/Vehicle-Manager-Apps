@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/logo">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.sisalma.vehicleandusermanagement.view.loginFragment"
+        android:label="loginFragment"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_loginFragment_to_daftarFragment"
+            app:destination="@id/daftarFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out" />
+        <action
+            android:id="@+id/action_loginFragment_to_vehicleFragment"
+            app:destination="@id/vehicleFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/daftarFragment"
+        android:name="com.sisalma.vehicleandusermanagement.view.DaftarFragment"
+        android:label="daftarFragment"
+        tools:layout="@layout/fragment_daftar">
+        <action
+            android:id="@+id/action_daftarFragment_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:enterAnim="@android:anim/fade_in"
+            app:exitAnim="@android:anim/fade_out" />
+        <action
+            android:id="@+id/action_daftarFragment_to_vehicleFragment"
+            app:destination="@id/vehicleFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/vehicleFragment"
+        android:name="com.sisalma.vehicleandusermanagement.view.VehicleFragment"
+        android:label="fragment_item_list"
+        tools:layout="@layout/fragment_vehicle_list" >
+        <action
+            android:id="@+id/action_vehicleFragment_to_vehicleEdit"
+            app:destination="@id/vehicleEdit" />
+    </fragment>
+    <fragment
+        android:id="@+id/vehicleEdit"
+        android:name="com.sisalma.vehicleandusermanagement.view.VehicleFragment"
+        android:label="fragment_item_list"
+        tools:layout="@layout/fragment_vehicle_edit" >
+        <action
+            android:id="@+id/action_vehicleEdit_to_vehicleFragment"
+            app:destination="@id/vehicleFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/logo"
+        android:name="com.sisalma.vehicleandusermanagement.logo"
+        android:label="fragment_logo"
+        tools:layout="@layout/fragment_logo" >
+        <action
+            android:id="@+id/action_logo_to_loginFragment"
+            app:destination="@id/loginFragment" />
+    </fragment>
+
+</navigation>

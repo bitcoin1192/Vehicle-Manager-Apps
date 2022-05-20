@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "374285710208",
+    "firebase_url": "https://latihan-34c76-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "latihan-34c76",
+    "storage_bucket": "latihan-34c76.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:374285710208:android:a47f8e0abdbc4f4b3cc765",
+        "android_client_info": {
+          "package_name": "com.sisalma.vehicleandusermanagement"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "374285710208-3snil3v1ekeek3b26cfukjjd2c39cjss.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKPp0SKObw3UAeTBfDx1Qxk4W0XtVsbRM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "374285710208-3snil3v1ekeek3b26cfukjjd2c39cjss.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

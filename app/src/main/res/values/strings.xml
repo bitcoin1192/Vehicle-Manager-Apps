@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Vehicle and User Management</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="username_desc">Type in your username</string>
+    <string name="password_desc">Type in your password</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+</resources>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DesignSurface">
+    <option name="filePathToZoomLevelMap">
+      <map>
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/drawable/shape_rectangle_false.xml" value="0.121" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/drawable/shape_rectangle_item_container.xml" value="0.2555" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/drawable/shape_rectangle_true.xml" value="0.121" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/activity_launcher.xml" value="0.2006340579710145" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/dialog_input.xml" value="0.23596014492753623" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/fragment_daftar.xml" value="0.2006340579710145" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/fragment_item.xml" value="0.5275590551181102" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/fragment_item_list.xml" value="0.4" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/fragment_login.xml" value="0.264" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/fragment_logo.xml" value="0.25" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/fragment_vehicle.xml" value="0.10989583333333333" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/fragment_vehicle_edit.xml" value="0.25" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/fragment_vehicle_list.xml" value="0.3093841642228739" />
+        <entry key="..\:/Users/dhiaa/AndroidStudioProjects/VehicleandUserManagement/app/src/main/res/layout/view_user_summary.xml" value="0.25" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="11" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/build/classes" />
+  </component>
+  <component name="ProjectType">
+    <option name="id" value="Android" />
+  </component>
+</project>
