@@ -21,7 +21,7 @@ class GroupRepository(context: AppCompatActivity) {
 
     private fun runGroupEndpoint(actionBody: GroupBody){
         conteks.lifecycleScope.launch(Dispatchers.IO){
-            val result = endPointService.vehicleEndpoint(actionBody)
+            val result = endPointService.groupEndpoint(actionBody)
             _response.postValue(result)
         }
     }

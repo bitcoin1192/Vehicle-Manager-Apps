@@ -26,7 +26,11 @@ interface backendService {
     suspend fun loginEndpoint(@Body body: LoginBody): NetworkResponse<LoginResponse, ResponseError>
 
     @POST("groupOps")
+    suspend fun groupEndpoint(@Body body: GroupBody): NetworkResponse<ResponseSuccess, ResponseError>
+
+    @POST("vehicleOps")
     suspend fun vehicleEndpoint(@Body body: GroupBody): NetworkResponse<ResponseSuccess, ResponseError>
+
 }
 
 class APIEndpoint (context: AppCompatActivity){
