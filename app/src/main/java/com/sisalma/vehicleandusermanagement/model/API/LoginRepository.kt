@@ -45,7 +45,7 @@ class LoginRepository(context: AppCompatActivity, ViewModelError: ViewModelError
                 is NetworkResponse.NetworkError->{
                     Log.e("Network Error", "${result.error.message}")
                     result.body?.let {
-                        ErrorType.LogableError(result.error.toString(),
+                        ErrorType.ShowableError(result.error.toString(),
                             it.errmsg)
                     }?.let {
                         ViewModelError.setError(
