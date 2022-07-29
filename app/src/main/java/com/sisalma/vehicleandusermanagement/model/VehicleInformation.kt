@@ -1,6 +1,6 @@
-package com.sisalma.vehicleandusermanagement
+package com.sisalma.vehicleandusermanagement.model
 
-data class OwnedVehicle(
+data class VehicleInformation(
     val AccKey: String,
     val Manufacturer: String,
     val Model: String,
