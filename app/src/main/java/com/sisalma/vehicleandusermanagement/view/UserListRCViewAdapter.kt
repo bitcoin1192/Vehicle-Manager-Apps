@@ -27,9 +27,9 @@ class UserListRCViewAdapter(
     }
 
     inner class ViewHolder(binding: ViewUserSummaryBinding, listener: (Int) -> Unit) : RecyclerView.ViewHolder(binding.root) {
-        val usernameView: TextView = binding.tvUsername
-        val dateView: TextView = binding.staticDate
-        val checklistImage: ImageView = binding.imageView3
+        val usernameView: TextView = binding.tvMainName
+        val dateView: TextView = binding.tvSecondaryValue
+        val checklistImage: ImageView = binding.ivChecklist
         private val binding = binding
 
         init {

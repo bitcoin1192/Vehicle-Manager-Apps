@@ -14,4 +14,8 @@ class ViewModelVehicle: ViewModel() {
         selectedVID = input
         _requestMemberData.value = selectedVID
     }
+
+    fun connectDeviceVID(){
+
+    }
 }

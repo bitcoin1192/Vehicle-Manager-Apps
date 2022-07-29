@@ -20,7 +20,7 @@
             android:layout_height="match_parent">
 
             <TextView
-                android:id="@+id/tv_Username"
+                android:id="@+id/tv_main_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
@@ -31,7 +31,7 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <ImageView
-                android:id="@+id/imageView3"
+                android:id="@+id/iv_checklist"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="16dp"
@@ -42,7 +42,7 @@
                 app:srcCompat="@drawable/ic_baseline_check_box_24" />
 
             <TextView
-                android:id="@+id/static_date"
+                android:id="@+id/tv_secondary_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
@@ -52,21 +52,21 @@
                 android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/tv_Username" />
+                app:layout_constraintTop_toBottomOf="@+id/tv_main_name" />
 
             <TextView
-                android:id="@+id/tv_dateAdded"
+                android:id="@+id/tv_secondary_value"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
                 android:layout_marginTop="10dp"
                 android:text="dd/mm/yyyy"
                 android:textSize="18sp"
-                app:layout_constraintStart_toEndOf="@+id/static_date"
-                app:layout_constraintTop_toBottomOf="@+id/tv_Username" />
+                app:layout_constraintStart_toEndOf="@+id/tv_secondary_name"
+                app:layout_constraintTop_toBottomOf="@+id/tv_main_name" />
 
             <ImageView
-                android:id="@+id/imageView4"
+                android:id="@+id/iv_static_box"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
                 android:layout_marginEnd="6dp"
