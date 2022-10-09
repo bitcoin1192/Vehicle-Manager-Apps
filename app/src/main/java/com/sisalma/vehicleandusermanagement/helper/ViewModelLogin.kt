@@ -37,11 +37,10 @@ class ViewModelLogin : ViewModel() {
                 Log.i("ViewModelLoginInternalS",response.toString())
             }
             is NetworkResponse.Error -> {
-                _status.value  = response.body?.let {
-                    Log.i("ViewModelLoginInternalE",it.errmsg)
-                    ResponseState.isError(it.errmsg)
+                response.body?.errMsg?.let {
+                    _status.value = ResponseState.isError(it)
+                    Log.i("ViewModelLoginInternalE",it)
                 }
-
             }
         }
     }

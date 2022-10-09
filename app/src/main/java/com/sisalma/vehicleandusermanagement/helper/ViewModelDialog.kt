@@ -10,8 +10,19 @@ class ViewModelDialog: ViewModel() {
     val liveDataInfo: LiveData<String> get() = _liveDataInfo
     private val _liveDataInputForm: MutableLiveData<String> = MutableLiveData()
     val liveDataInputForm: LiveData<String> get() = _liveDataInputForm
-    fun showError(errMsg: String){
+    private val _liveDataInputResponse: MutableLiveData<String> = MutableLiveData()
+    val liveDataInputResponse: LiveData<String> get() = _liveDataInputResponse
+    var inputString:String? = null
 
+    fun readUserResponse(){
+        inputString?.let {
+            _liveDataInputResponse.value = it
+        }
+        inputString = null
+    }
+
+    fun storeUserResponse(query:String){
+        inputString = query
     }
 
     fun showInputForm(hintMsg: String){

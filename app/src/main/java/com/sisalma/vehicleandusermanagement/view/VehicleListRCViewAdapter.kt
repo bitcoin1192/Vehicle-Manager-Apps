@@ -7,14 +7,15 @@ import android.widget.TextView
 
 import com.sisalma.vehicleandusermanagement.databinding.FragmentVehicleBinding
 import com.sisalma.vehicleandusermanagement.model.FirebaseGroupDataStructure
+import com.sisalma.vehicleandusermanagement.model.VehicleInformation
 
 
 class VehicleListRCViewAdapter(
-    values: FirebaseGroupDataStructure,
+    values: List<VehicleInformation>,
     val listener: (Int)-> Unit
 ) : RecyclerView.Adapter<VehicleListRCViewAdapter.ViewHolder>() {
 
-    private val valuesList = values.OwnedVID
+    private val valuesList = values
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder(
             FragmentVehicleBinding.inflate(
@@ -29,8 +30,9 @@ class VehicleListRCViewAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = valuesList[position]
         holder.policeNumView.text = item.PoliceNum
-        holder.totalUserView.text = item.MemberTotal.toString()+" Pengguna"
-        holder.vehicleSummaryDetail.text = item.Merk+ ", " +item.Tahun
+        //holder.totalUserView.text = item.MemberTotal.toString()+" Pengguna"
+        holder.totalUserView.text = "X Pengguna"
+        holder.vehicleSummaryDetail.text = item.Manufacturer+ " " +item.Type
         holder.setVIDValue(item.VID)
     }
 

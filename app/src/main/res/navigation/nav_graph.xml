@@ -39,20 +39,16 @@
         android:label="fragment_item_list"
         tools:layout="@layout/fragment_vehicle_list" >
         <action
-            android:id="@+id/action_vehicleFragment_to_vehicleEdit"
-            app:destination="@id/vehicleEdit" />
-        <action
-            android:id="@+id/action_vehicleFragment_to_vehicle_add_selection"
-            app:destination="@id/vehicle_add_selection" />
-        <action
             android:id="@+id/action_vehicleFragment_to_fragment_empty_container"
             app:destination="@id/fragment_empty_container" />
+        <action
+            android:id="@+id/action_main_to_edit"
+            app:destination="@id/vehicleEditFragment" />
     </fragment>
     <fragment
-        android:id="@+id/vehicleEdit"
-        android:name="com.sisalma.vehicleandusermanagement.view.VehicleFragment"
-        android:label="fragment_item_list"
-        tools:layout="@layout/fragment_vehicle_edit" >
+        android:id="@+id/vehicleEditFragment"
+        android:name="com.sisalma.vehicleandusermanagement.view.VehicleEdit"
+        android:label="fragment_item_list">
         <action
             android:id="@+id/action_vehicleEdit_to_vehicleFragment"
             app:destination="@id/vehicleFragment" />
