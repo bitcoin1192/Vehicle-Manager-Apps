@@ -1,5 +1,6 @@
 package com.sisalma.vehicleandusermanagement.helper
 
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -9,11 +10,21 @@ import com.sisalma.vehicleandusermanagement.model.API.opResult
 import com.sisalma.vehicleandusermanagement.view.memberDataWrapper
 
 class ViewModelVehicle: ViewModel() {
+    var fragmentIsShowed = false
     private var selectedVID = 0
+    private var bluetoothConnectionStatus: Boolean = false
     private val _requestVehicleData: MutableLiveData<vehicleOperationRequest> = MutableLiveData()
-    private val _vehicleMemberData: MutableLiveData<ListMemberData> = MutableLiveData()
     val requestMemberData: LiveData<vehicleOperationRequest> get() = _requestVehicleData
+
+    private val _vehicleMemberData: MutableLiveData<ListMemberData> = MutableLiveData()
     val vehicleMemberData: LiveData<ListMemberData> get() = _vehicleMemberData
+
+    private val _bluetoothRequest: MutableLiveData<vehicleOperationRequest> = MutableLiveData()
+    val bluetoothRequest: LiveData<vehicleOperationRequest> get() = _bluetoothRequest
+
+    private val _status: MutableLiveData<ResponseState> = MutableLiveData()
+    val status: LiveData<ResponseState> get() = _status
+
     private var latestMemberList : HashMap<Int,MemberData> = HashMap()
     var formMemberList : HashMap<Int,MemberData> = HashMap()
 
@@ -28,6 +39,27 @@ class ViewModelVehicle: ViewModel() {
             is opResult.transferSuccess->{
                 getMemberData()
             }
+            is opResult.btSuccesful->{
+                showError("Bluetooth operation succesful")
+            }
+            is opResult.addError->{
+                showError("Adding member fail, please try again")
+            }
+            is opResult.removeError->{
+                showError("Removing member fail, Please try again")
+            }
+            is opResult.transferError->{
+                showError("Transfering vehicle fail, Please try again")
+            }
+            is opResult.btFail->{
+                showError("Fail to do bluetooth operation")
+            }
+        }
+    }
+
+    private fun showError(msg: String){
+        if(fragmentIsShowed and msg.isNotEmpty()){
+            _status.value = ResponseState.isError(msg)
         }
     }
 
@@ -86,22 +118,36 @@ class ViewModelVehicle: ViewModel() {
         //TODO("Function to set vehicle member by diffing between new list and server list")
     }
 
-    fun setLockStatus(){
+    fun setLockStatus(lock: Boolean){
         //TODO("Function to set lock status of vehicle in order to control vehicle electric system via bluetooth")
+        if (bluetoothConnectionStatus == true){
+            _bluetoothRequest.value = vehicleOperationRequest.setLockStatus(lock)
+        }
+
     }
 
     fun setVID(VID: Int){
         selectedVID = VID
         getMemberData()
+        connectDeviceVID(VID)
     }
 
-    fun connectDeviceVID(){
-
+    fun connectDeviceVID(VID: Int){
+        _bluetoothRequest.value = vehicleOperationRequest.bluetoothConnectRequest("Should be a vid")
     }
+
+    fun connectedToDevice(status: Boolean){
+        if(fragmentIsShowed){
+
+        }
+    }
+
 }
 sealed class vehicleOperationRequest(){
     class removeMember(val VID:Int,val members: ListMemberData):vehicleOperationRequest()
     class addMember(val VID: Int, val members: ListMemberData):vehicleOperationRequest()
     class transferVehicle(val VID: Int, val targetMember: MemberData):vehicleOperationRequest()
     class getVehicleMember(val VID:Int):vehicleOperationRequest()
+    class setLockStatus(val lockRequest: Boolean): vehicleOperationRequest()
+    class bluetoothConnectRequest(val VID: String): vehicleOperationRequest()
 }

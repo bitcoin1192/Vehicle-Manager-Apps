@@ -105,13 +105,20 @@ class launcher_activity : AppCompatActivity() {
         ViewModelLogin.status.observe(this){
             when(it){
                 is ResponseState.isError -> {
-                    Log.e("VML-Observer",it.errorMsg)
-                    dialogMaker(1,it.errorMsg)
+                    ViewModelError.setError(ErrorType.LogableError("ViewModelLogin", it.errorMsg))
+                }
+            }
+        }
+        ViewModelVehicle.status.observe(this){
+            when(it){
+                is ResponseState.isError->{
+                    ViewModelError.setError(ErrorType.ShowableError("ViewModelVehicle",it.errorMsg))
                 }
             }
         }
     }
 
+    //Called by ViewModelDialog indirectly with livedata, next would be to use flow api
     private fun dialogMaker(type: Int, msg: String){
         val DialogInfo = InfoDialogFragment()
         val DialogInput = FormDialogFragment()

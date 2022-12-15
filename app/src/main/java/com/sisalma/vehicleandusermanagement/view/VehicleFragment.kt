@@ -30,7 +30,8 @@ class VehicleFragment : Fragment() {
         ViewModelGr.leaseVehicleList.observe(this.viewLifecycleOwner){
             view.list.adapter = VehicleListRCViewAdapter(it){ VIDValue ->
                 ViewModelVehicle.setVID(VIDValue)
-                findNavController().navigate(R.id.action_main_to_edit)
+                val action = VehicleFragmentDirections.actionVehicleFragmentToVehicleMenuFragment(VIDValue)
+                findNavController().navigate(action)
             }
         }
         return view.root

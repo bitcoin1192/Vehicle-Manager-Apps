@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.viewbinding.ViewBinding
 import com.sisalma.vehicleandusermanagement.databinding.FragmentVehicleEditBinding
 import com.sisalma.vehicleandusermanagement.helper.ViewModelDialog
 import com.sisalma.vehicleandusermanagement.helper.ViewModelUser
@@ -17,6 +18,7 @@ class VehicleEdit: Fragment() {
     private val ViewModelVehicle: ViewModelVehicle by activityViewModels()
     private val ViewModelGr: ViewModelUser by activityViewModels()
     private val ViewModelDialog: ViewModelDialog by activityViewModels()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -28,20 +30,20 @@ class VehicleEdit: Fragment() {
         ViewModelVehicle.vehicleMemberData.observe(this.viewLifecycleOwner){ list ->
             view.removeButton.visibility = View.INVISIBLE
             view.noUserMessage.visibility = View.INVISIBLE
-            view.UserList.adapter = UserListRCViewAdapter(list) {
-                //findNavController().navigate(R.id.action_vehicleEdit_to_vehicleFragment)
-                ViewModelVehicle.updateMemberData(it)
-                if (ViewModelVehicle.formMemberList.isNotEmpty()) {
-                    view.removeButton.visibility = View.VISIBLE
-                } else {
-                    view.removeButton.visibility = View.INVISIBLE
-                }
-            }
             if(list.VehicleMember.isNotEmpty()) {
                 view.noUserMessage.visibility = View.INVISIBLE
+                view.UserList.adapter = UserListRCViewAdapter(list) {
+                    ViewModelVehicle.updateMemberData(it)
+                    if (ViewModelVehicle.formMemberList.isNotEmpty()) {
+                        view.removeButton.visibility = View.VISIBLE
+                    } else {
+                        view.removeButton.visibility = View.INVISIBLE
+                    }
+                }
             }else{
                 view.noUserMessage.visibility = View.VISIBLE
                 view.noUserMessage.text = "You haven't leased this vehicle to anyone"
+                view.UserList.adapter = null
             }
             contentIsReady = true
         }
@@ -61,10 +63,9 @@ class VehicleEdit: Fragment() {
         ViewModelDialog.liveDataInputResponse.observe(this.viewLifecycleOwner){
             if (it.isNotEmpty()){
                 ViewModelVehicle.updateMemberData(memberDataWrapper.add(MemberData("",it.toInt(),"")))
-                ViewModelVehicle.removeMember(ViewModelVehicle.formMemberList)
+                ViewModelVehicle.addMember(ViewModelVehicle.formMemberList)
             }
         }
         return view.root
     }
-
 }

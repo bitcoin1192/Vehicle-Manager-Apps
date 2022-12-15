@@ -134,6 +134,8 @@ sealed class opResult{
     class removeError(val errorMsg: String): opResult()
     class transferSuccess: opResult()
     class transferError(val errorMsg: String): opResult()
+    class btSuccesful(val errorMsg: String): opResult()
+    class btFail(val errorMsg: String): opResult()
 }
 
 data class ListMemberData(val VehicleMember:List<MemberData>)

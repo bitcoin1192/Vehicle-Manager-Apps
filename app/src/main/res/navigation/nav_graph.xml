@@ -39,16 +39,14 @@
         android:label="fragment_item_list"
         tools:layout="@layout/fragment_vehicle_list" >
         <action
-            android:id="@+id/action_vehicleFragment_to_fragment_empty_container"
-            app:destination="@id/fragment_empty_container" />
-        <action
-            android:id="@+id/action_main_to_edit"
-            app:destination="@id/vehicleEditFragment" />
+            android:id="@+id/action_vehicleFragment_to_vehicle_menu_fragment"
+            app:destination="@id/VehicleMenuFragment" />
     </fragment>
     <fragment
         android:id="@+id/vehicleEditFragment"
         android:name="com.sisalma.vehicleandusermanagement.view.VehicleEdit"
-        android:label="fragment_item_list">
+        android:label="fragment_item_list"
+        tools:layout="@layout/fragment_vehicle_edit" >
         <action
             android:id="@+id/action_vehicleEdit_to_vehicleFragment"
             app:destination="@id/vehicleFragment" />
@@ -68,13 +66,17 @@
         android:label="fragment_vehicle_add_selection"
         tools:layout="@layout/fragment_vehicle_add_selection" />
     <fragment
-        android:id="@+id/fragment_empty_container"
-        android:name="com.sisalma.vehicleandusermanagement.fragment_empty_container"
-        android:label="fragment_empty_container2"
-        tools:layout="@layout/fragment_empty_container2" >
+        android:id="@+id/VehicleMenuFragment"
+        android:name="com.sisalma.vehicleandusermanagement.fragmentVehicleMenu"
+        android:label="VehicleMenuFragment"
+        tools:layout="@layout/fragment_vehicle_menu" >
         <action
-            android:id="@+id/action_fragment_empty_container_to_vehicleFragment"
-            app:destination="@id/vehicleFragment" />
+            android:id="@+id/action_VehicleMenuFragment_to_vehicleEditFragment"
+            app:destination="@id/vehicleEditFragment" />
+        <argument
+            android:name="VID"
+            app:argType="integer"
+            android:defaultValue="0" />
     </fragment>
 
 </navigation>

@@ -18,11 +18,11 @@ class ViewModelDialog: ViewModel() {
         inputString?.let {
             _liveDataInputResponse.value = it
         }
-        inputString = null
     }
 
     fun storeUserResponse(query:String){
         inputString = query
+        readUserResponse()
     }
 
     fun showInputForm(hintMsg: String){
