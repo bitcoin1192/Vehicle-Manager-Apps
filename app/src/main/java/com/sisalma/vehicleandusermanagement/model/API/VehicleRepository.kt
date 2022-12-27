@@ -1,5 +1,6 @@
 package com.sisalma.vehicleandusermanagement.model.API
 
+import android.bluetooth.BluetoothAdapter
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
@@ -7,6 +8,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import com.google.gson.Gson
 import com.haroldadmin.cnradapter.NetworkResponse
+import com.sisalma.vehicleandusermanagement.helper.ErrorType
 import com.sisalma.vehicleandusermanagement.helper.ViewModelError
 import com.sisalma.vehicleandusermanagement.helper.vehicleOperationRequest
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +50,7 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
         val form = ChangeMemberForm(UIDTarget.UID,VID)
         runTransferOwnership(GroupBody("transfer", arrayListOf(form)))
     }
+
     fun getVehicleSummary(VID: Int){
         runGetVehicleMember(GroupBody("member", arrayListOf(ChangeMemberForm(0,VID))))
     }
@@ -105,10 +108,7 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
         when (result) {
             is NetworkResponse.ServerError -> {
                 result.body?.let {
-                    Log.e(
-                        "Server Error: ".plus(result.code.toString()),
-                        it.errMsg
-                    )
+                    errorView.setError(ErrorType.ShowableError("Server Error: ".plus(result.code.toString()),it.errMsg))
                 }
                 forwardResponse = false
             }

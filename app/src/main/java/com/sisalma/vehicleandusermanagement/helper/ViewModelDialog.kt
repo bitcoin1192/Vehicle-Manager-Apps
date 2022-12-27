@@ -32,5 +32,7 @@ class ViewModelDialog: ViewModel() {
     fun showInfo(infoMsg: String){
         _liveDataInfo.value = infoMsg
     }
-
+    fun clearResponse(){
+        _liveDataInputResponse.value = null
+    }
 }

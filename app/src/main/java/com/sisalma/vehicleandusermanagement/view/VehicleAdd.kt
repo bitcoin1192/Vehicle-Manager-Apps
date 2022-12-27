@@ -6,7 +6,8 @@ import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 
 class VehicleAdd: Fragment() {
     lateinit var BLEScanner: bluetoothLEDeviceFinder
-    /*init {
-        BLEScanner = bluetoothLEDevice()
-    }*/
+
+    init {
+    }
+
 }

@@ -9,3 +9,7 @@ data class VehicleInformation(
     val UID: Int,
     val VID: Int
 )
+data class SearchResult(
+    val UID: Int,
+    val Username: String
+)

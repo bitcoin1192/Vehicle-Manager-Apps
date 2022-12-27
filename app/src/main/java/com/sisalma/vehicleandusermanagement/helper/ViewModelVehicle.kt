@@ -4,6 +4,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.sisalma.vehicleandusermanagement.fragmentVehicleMenuDirections
 import com.sisalma.vehicleandusermanagement.model.API.ListMemberData
 import com.sisalma.vehicleandusermanagement.model.API.MemberData
 import com.sisalma.vehicleandusermanagement.model.API.opResult
@@ -13,6 +14,7 @@ class ViewModelVehicle: ViewModel() {
     var fragmentIsShowed = false
     private var selectedVID = 0
     private var bluetoothConnectionStatus: Boolean = false
+
     private val _requestVehicleData: MutableLiveData<vehicleOperationRequest> = MutableLiveData()
     val requestMemberData: LiveData<vehicleOperationRequest> get() = _requestVehicleData
 
@@ -76,25 +78,24 @@ class ViewModelVehicle: ViewModel() {
                 formMemberList.remove(input.memberData.UID)
             }
         }
-
     }
 
     fun removeMember(input: HashMap<Int,MemberData>){
-        //TODO(Connect this function to repository to post this request)
         val list = arrayListOf<MemberData>()
         input.values.forEach{ memberData ->
             list.add(memberData)
         }
         _requestVehicleData.value = vehicleOperationRequest.removeMember(selectedVID,ListMemberData(list))
+        formMemberList.clear()
     }
 
     fun addMember(input: HashMap<Int,MemberData>){
-        //TODO(Connect this function to repository to post this request)
         val list = arrayListOf<MemberData>()
         input.values.forEach{ memberData ->
             list.add(memberData)
         }
         _requestVehicleData.value = vehicleOperationRequest.addMember(selectedVID,ListMemberData(list))
+        formMemberList.clear()
     }
 
     fun setMemberData(latestList :ListMemberData){
@@ -113,9 +114,25 @@ class ViewModelVehicle: ViewModel() {
         }
         _vehicleMemberData.value = ListMemberData(list)
     }
+    fun showViewableMemberData(){
+        showMemberData()
+    }
+    fun clearViewableMemberData(){
+        _vehicleMemberData.value = null
+    }
+    fun transferVehicleOwnership(targetUID: Int){
+        val formRequest = MemberData("",targetUID,"")
+        val list = arrayListOf<MemberData>()
+        list.add(formRequest)
+        _requestVehicleData.value = vehicleOperationRequest.transferVehicle(selectedVID, formRequest)
+    }
 
+    //Below this line, all function require bluetooth le to connect to Pi-Zero
     fun setVehicleMember(newList: ListMemberData){
         //TODO("Function to set vehicle member by diffing between new list and server list")
+        if(bluetoothConnectionStatus == true){
+
+        }
     }
 
     fun setLockStatus(lock: Boolean){
@@ -142,6 +159,9 @@ class ViewModelVehicle: ViewModel() {
         }
     }
 
+    fun fragmentRemove(){
+        fragmentIsShowed = false
+    }
 }
 sealed class vehicleOperationRequest(){
     class removeMember(val VID:Int,val members: ListMemberData):vehicleOperationRequest()

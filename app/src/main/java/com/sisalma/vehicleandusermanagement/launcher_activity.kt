@@ -5,6 +5,8 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment
@@ -13,6 +15,7 @@ import com.sisalma.vehicleandusermanagement.helper.*
 import com.sisalma.vehicleandusermanagement.model.API.LoginRepository
 import com.sisalma.vehicleandusermanagement.model.API.UserRepository
 import com.sisalma.vehicleandusermanagement.model.API.VehicleRepository
+import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 
 class launcher_activity : AppCompatActivity() {
     lateinit var navHostFragment: NavHostFragment
@@ -26,6 +29,7 @@ class launcher_activity : AppCompatActivity() {
     val ViewModelDialog: ViewModelDialog by viewModels()
     lateinit var btMan: BluetoothManager
     lateinit var btAdapter: BluetoothAdapter
+    lateinit var bleFinder: bluetoothLEDeviceFinder
 
     override fun onResume() {
         super.onResume()
@@ -38,7 +42,10 @@ class launcher_activity : AppCompatActivity() {
         LoginRepository = LoginRepository(this, ViewModelError)
         UserRepository = UserRepository(this,ViewModelError)
         VehicleRepository = VehicleRepository(this,ViewModelError)
-        btSetup()
+        val actionBar = supportActionBar
+        actionBar?.setTitle("Vehicle Manager")
+        actionBar?.show()
+        //btSetup()
         bindViewModelRequest()
         bindViewModelRepository()
         bindViewModelStatus()
@@ -50,6 +57,8 @@ class launcher_activity : AppCompatActivity() {
         btMan.adapter?.let { adapter ->
             btAdapter = adapter
             Log.i("btSetup","btManager and btAdapter is set on Activity")
+            bleFinder = bluetoothLEDeviceFinder(btAdapter,this)
+            //bleFinder.scan
             return
         }
         Log.i("btSetup","btManager failed to get system service manager")
@@ -64,11 +73,13 @@ class launcher_activity : AppCompatActivity() {
                 LoginRepository.doLogin()
             }
         }
+        ViewModelUser.request.observe(this){ query ->
+            UserRepository.searchUserUID(query)
+        }
         ViewModelLogin.status.observe(this){
             UserRepository.getKnownVehicle()
         }
         ViewModelVehicle.requestMemberData.observe(this){ VID ->
-            //sealed class based parser
             VehicleRepository.requestParser(VID)
         }
         ViewModelError.showableErrorListener.observe(this){
@@ -132,6 +143,12 @@ class launcher_activity : AppCompatActivity() {
                 DialogInfo.show(supportFragmentManager, "layout")
             }
         }
+    }
+
+    fun showToolbar(){
+        var binding = ActivityLauncherBinding.inflate(layoutInflater)
+        binding.toolbar.visibility = View.VISIBLE
+        setContentView(binding.root)
     }
 }
 

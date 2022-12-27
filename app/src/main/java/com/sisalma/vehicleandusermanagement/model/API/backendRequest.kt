@@ -16,6 +16,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
 import okhttp3.OkHttpClient
+import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
 data class LoginBody(var intent: String, var username: String, var password: String)
@@ -23,7 +24,7 @@ data class LoginResponse(val success: Boolean = true ,var msg: String, var uid: 
 
 data class IntentOnly(var intent: String, val changeData: String = "Empty")
 data class UserBody(var intent: String, var changeData: List<UserData>)
-data class UserData(var password: String)
+data class UserData(var password: String, var query: String)
 
 data class GroupBody(var intent: String, var changeMember: List<ChangeMemberForm>)
 data class ChangeMemberForm(val UID: Int = 0, val VID: Int)
@@ -44,6 +45,9 @@ interface UserBackend {
 
     @POST("userOps")
     suspend fun editUserData(@Body body: UserBody): NetworkResponse<ResponseSuccess, ResponseError>
+
+    @POST("userOps")
+    suspend fun searchUserUID(@Body body: UserBody): NetworkResponse<ResponseSuccess, ResponseError>
 }
 
 interface VehicleBackend {
@@ -66,8 +70,9 @@ class CustomCookies(val cache: CookieCache,val persistence: CookiePersistor): Pe
     }
 }
 class APIEndpoint (context: AppCompatActivity){
-    //val BASE_URL = "https://dev-api.sisalma.com/"
-    val BASE_URL = "http://192.168.30.181:5000/"
+    val BASE_URL = "https://dev-api.sisalma.com/"
+    //val BASE_URL = "http://192.168.30.181:5000/"
+    //val BASE_URL = "http://10.21.159.239:5000/"
     val cookieJar = CustomCookies(SetCookieCache(),SharedPrefsCookiePersistor(context.applicationContext))
     val customOkHttpClient = OkHttpClient.Builder()
         .cookieJar(cookieJar)

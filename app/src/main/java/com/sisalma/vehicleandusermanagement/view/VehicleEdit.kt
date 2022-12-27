@@ -16,7 +16,7 @@ import com.sisalma.vehicleandusermanagement.model.API.MemberData
 class VehicleEdit: Fragment() {
     private var contentIsReady = false
     private val ViewModelVehicle: ViewModelVehicle by activityViewModels()
-    private val ViewModelGr: ViewModelUser by activityViewModels()
+    private val ViewModelUser: ViewModelUser by activityViewModels()
     private val ViewModelDialog: ViewModelDialog by activityViewModels()
 
     override fun onCreateView(
@@ -25,27 +25,32 @@ class VehicleEdit: Fragment() {
         savedInstanceState: Bundle?
     ): View? {
 
+        //Try to find and connect to BLE device
+
         val view = FragmentVehicleEditBinding.inflate(inflater, container, false)
         view.noUserMessage.text = "Waiting for data to arrive"
+
         ViewModelVehicle.vehicleMemberData.observe(this.viewLifecycleOwner){ list ->
-            view.removeButton.visibility = View.INVISIBLE
-            view.noUserMessage.visibility = View.INVISIBLE
-            if(list.VehicleMember.isNotEmpty()) {
+            list?.let {
+                view.removeButton.visibility = View.INVISIBLE
                 view.noUserMessage.visibility = View.INVISIBLE
-                view.UserList.adapter = UserListRCViewAdapter(list) {
-                    ViewModelVehicle.updateMemberData(it)
-                    if (ViewModelVehicle.formMemberList.isNotEmpty()) {
-                        view.removeButton.visibility = View.VISIBLE
-                    } else {
-                        view.removeButton.visibility = View.INVISIBLE
+                if(list.VehicleMember.isNotEmpty()) {
+                    view.noUserMessage.visibility = View.INVISIBLE
+                    view.UserList.adapter = UserListRCViewAdapter(list) {
+                        ViewModelVehicle.updateMemberData(it)
+                        if (ViewModelVehicle.formMemberList.isNotEmpty()) {
+                            view.removeButton.visibility = View.VISIBLE
+                        } else {
+                            view.removeButton.visibility = View.INVISIBLE
+                        }
                     }
+                }else{
+                    view.noUserMessage.visibility = View.VISIBLE
+                    view.noUserMessage.text = "You haven't leased this vehicle to anyone"
+                    view.UserList.adapter = null
                 }
-            }else{
-                view.noUserMessage.visibility = View.VISIBLE
-                view.noUserMessage.text = "You haven't leased this vehicle to anyone"
-                view.UserList.adapter = null
+                contentIsReady = true
             }
-            contentIsReady = true
         }
 
         view.addButton.setOnClickListener(){
@@ -61,11 +66,16 @@ class VehicleEdit: Fragment() {
         }
 
         ViewModelDialog.liveDataInputResponse.observe(this.viewLifecycleOwner){
-            if (it.isNotEmpty()){
+            it?.let {
                 ViewModelVehicle.updateMemberData(memberDataWrapper.add(MemberData("",it.toInt(),"")))
                 ViewModelVehicle.addMember(ViewModelVehicle.formMemberList)
             }
         }
         return view.root
+    }
+    override fun onStop() {
+        ViewModelVehicle.clearViewableMemberData()
+        ViewModelDialog.clearResponse()
+        super.onStop()
     }
 }
