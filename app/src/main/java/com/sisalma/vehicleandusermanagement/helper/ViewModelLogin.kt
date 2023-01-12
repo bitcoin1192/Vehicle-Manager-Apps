@@ -4,10 +4,9 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.haroldadmin.cnradapter.NetworkResponse
 import com.sisalma.vehicleandusermanagement.model.API.LoginBody
+import com.sisalma.vehicleandusermanagement.model.API.LoginRepoResponse
 import com.sisalma.vehicleandusermanagement.model.API.LoginResponse
-import com.sisalma.vehicleandusermanagement.model.API.ResponseError
 
 
 class ViewModelLogin : ViewModel() {
@@ -17,8 +16,8 @@ class ViewModelLogin : ViewModel() {
     val _currentUser: MutableLiveData<LoginBody> = MutableLiveData<LoginBody>()
     val currentUser : LiveData<LoginBody> get()= _currentUser
 
-    private val _status: MutableLiveData<ResponseState> = MutableLiveData()
-    val status: LiveData<ResponseState> get() = _status
+    private val _status: MutableLiveData<LoginResponseState?> = MutableLiveData()
+    val status: LiveData<LoginResponseState?> get() = _status
 
     private val _response: MutableLiveData<String> = MutableLiveData()
     val response : LiveData<String> get()= _response
@@ -28,19 +27,16 @@ class ViewModelLogin : ViewModel() {
         this.password = password
     }
 
-    fun setResponse(response: NetworkResponse<LoginResponse, ResponseError>){
+    fun setResponse(response: LoginRepoResponse){
         when(response) {
-            is NetworkResponse.Success -> {
-                savedUser = response.body
-                _response.value = response.body.msg
-                _status.value  = ResponseState.isSuccess()
+            is LoginRepoResponse.LoginSuccess -> {
+                _response.value = response.result
+                _status.value  = LoginResponseState.successLogin()
                 Log.i("ViewModelLoginInternalS",response.toString())
             }
-            is NetworkResponse.Error -> {
-                response.body?.errMsg?.let {
-                    _status.value = ResponseState.isError(it)
-                    Log.i("ViewModelLoginInternalE",it)
-                }
+            is LoginRepoResponse.SignupSuccess -> {
+                _response.value = response.result
+                _status.value  = LoginResponseState.successSignup()
             }
         }
     }
@@ -63,9 +59,15 @@ class ViewModelLogin : ViewModel() {
             _currentUser.value = LoginBody("signup",this.username,this.password)
         }
     }
+
+    fun clearViewModel(){
+        _status.value = null
+        _response.value = null
+    }
 }
-sealed class ResponseState{
-    class isSuccess: ResponseState()
-    class isError(val errorMsg: String): ResponseState()
-    class isInfo(val Msg: String): ResponseState()
+sealed class LoginResponseState{
+    class successLogin: LoginResponseState()
+    class errorLogin(val errorMsg: String): LoginResponseState()
+    class successSignup: LoginResponseState()
+    class errorSignup(val errorMsg: String): LoginResponseState()
 }

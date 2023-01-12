@@ -34,18 +34,40 @@ class VehicleListSlider(): Fragment() {
             }
         }
         val view = ViewVehicleListBinding.inflate(inflater, container, false)
+
         if(page==0){
             view.titlePageVehicle.text = "Owned by you"
-            ViewModelUser.ownedVehicleList.observe(this.viewLifecycleOwner){
-                view.VehicleList.adapter = VehicleListRCViewAdapter(it) { VIDValue ->
-                    setFragmentResult("fragmentFinish", bundleOf(Pair("fragmentResult",VIDValue)))
+            view.VehicleList.adapter = EmptyDataPage("Data motor tidak tersedia")
+            ViewModelUser.ownedVehicleList.observe(this.viewLifecycleOwner) {
+                it?.let {
+                    if (it.isNotEmpty()) {
+                        view.VehicleList.adapter = VehicleListRCViewAdapter(it) { VIDValue ->
+                            setFragmentResult(
+                                "fragmentFinish",
+                                bundleOf(Pair("fragmentResult", VIDValue))
+                            )
+                        }
+                    }else{
+                        view.VehicleList.adapter = EmptyDataPage("Data motor tidak tersedia")
+                    }
                 }
             }
         }else if(page > 0){
             view.titlePageVehicle.text = "Leased to you"
+            view.VehicleList.adapter = EmptyDataPage("Tidak ada motor yang dapat dipinjam")
             ViewModelUser.leaseVehicleList.observe(this.viewLifecycleOwner){
-                view.VehicleList.adapter = VehicleListRCViewAdapter(it) { VIDValue ->
-                    setFragmentResult("fragmentFinish", bundleOf(Pair("fragmentResult",VIDValue)))
+                it?.let {
+                    if (it.isNotEmpty()) {
+                        view.VehicleList.adapter = VehicleListRCViewAdapter(it) { VIDValue ->
+                            setFragmentResult(
+                                "fragmentFinish",
+                                bundleOf(Pair("fragmentResult", VIDValue))
+                            )
+                        }
+                    }
+                    else{
+                        view.VehicleList.adapter = EmptyDataPage("Tidak ada motor yang dapat dipinjam")
+                    }
                 }
             }
         }

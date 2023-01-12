@@ -11,10 +11,13 @@ import com.haroldadmin.cnradapter.NetworkResponse
 import com.sisalma.vehicleandusermanagement.helper.ErrorType
 import com.sisalma.vehicleandusermanagement.helper.ViewModelError
 import com.sisalma.vehicleandusermanagement.helper.vehicleOperationRequest
+import com.sisalma.vehicleandusermanagement.model.BLEStuff.bluetoothLEService
+import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelError) {
+class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelError, BLEService: bluetoothLEService?, BLEFinder: bluetoothLEDeviceFinder?) {
+    private val BLEScanner: bluetoothLEDeviceFinder?  = BLEFinder
     private val conteks = context
     private val retroService = APIEndpoint(context)
     private val endPointService = retroService.vehicleService
@@ -30,6 +33,7 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
             is vehicleOperationRequest.addMember->addFriend(inputRequest.VID,inputRequest.members)
             is vehicleOperationRequest.removeMember->removeFriend(inputRequest.VID,inputRequest.members)
             is vehicleOperationRequest.transferVehicle->transferOwner(inputRequest.VID,inputRequest.targetMember)
+            is vehicleOperationRequest.bluetoothConnectRequest->findFromScannedList(inputRequest.VID)
         }
     }
     fun addFriend(VID: Int,UIDTarget: ListMemberData){
@@ -53,6 +57,13 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
 
     fun getVehicleSummary(VID: Int){
         runGetVehicleMember(GroupBody("member", arrayListOf(ChangeMemberForm(0,VID))))
+    }
+
+    fun findFromScannedList(deviceName: String){
+        conteks.lifecycleScope.launch(Dispatchers.IO){
+            BLEScanner?.scanLeDevice()
+            BLEScanner?.findLEDevice(deviceName)
+        }
     }
 
     private fun runAddFriend(actionBody: GroupBody){

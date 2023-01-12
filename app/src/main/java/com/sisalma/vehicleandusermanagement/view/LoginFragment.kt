@@ -9,7 +9,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.sisalma.vehicleandusermanagement.R
 import com.sisalma.vehicleandusermanagement.databinding.FragmentLoginBinding
-import com.sisalma.vehicleandusermanagement.helper.ResponseState
+import com.sisalma.vehicleandusermanagement.helper.LoginResponseState
 import com.sisalma.vehicleandusermanagement.helper.ViewModelLogin
 
 class loginFragment : Fragment() {
@@ -26,23 +26,29 @@ class loginFragment : Fragment() {
                 view.editTextTextPassword.text.toString())
             ViewModelLogin.loginAction()
         }
+
         view.btnDaftar.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_daftarFragment)
         }
 
-        ViewModelLogin.response.observe(viewLifecycleOwner,{ response ->
+        ViewModelLogin.response.observe(viewLifecycleOwner) { response ->
             view.textView.text = response
-        })
-        ViewModelLogin.status.observe(viewLifecycleOwner,{
-            when(it){
-                is ResponseState.isSuccess->{
-                    findNavController().navigate(R.id.action_loginFragment_to_vehicleFragment)
-                }
-                is ResponseState.isError->{
-                    view.textView.text = it.errorMsg
+        }
+
+        ViewModelLogin.status.observe(viewLifecycleOwner) {
+            it?.let {
+                when (it) {
+                    is LoginResponseState.successLogin -> {
+                        ViewModelLogin.clearViewModel()
+                        findNavController().navigate(R.id.action_loginFragment_to_vehicleFragment)
+                    }
+                    is LoginResponseState.errorLogin -> {
+                        view.textView.text = it.errorMsg
+                    }
                 }
             }
-        })
+        }
+
         return view.root
     }
 }

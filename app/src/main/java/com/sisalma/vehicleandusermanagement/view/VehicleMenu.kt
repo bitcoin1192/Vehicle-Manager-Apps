@@ -12,12 +12,14 @@ import com.sisalma.vehicleandusermanagement.databinding.FragmentVehicleMenuBindi
 import com.sisalma.vehicleandusermanagement.helper.ViewModelDialog
 import com.sisalma.vehicleandusermanagement.helper.ViewModelUser
 import com.sisalma.vehicleandusermanagement.helper.ViewModelVehicle
+import com.sisalma.vehicleandusermanagement.model.SearchResult
 import com.sisalma.vehicleandusermanagement.view.VehicleFragmentDirections
 
 class fragmentVehicleMenu : Fragment() {
     val ViewModelDialog: ViewModelDialog by activityViewModels()
     val ViewModelVehicle: ViewModelVehicle by activityViewModels()
     val ViewModelUser: ViewModelUser by activityViewModels()
+    var temporary = SearchResult(0,"")
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -39,10 +41,18 @@ class fragmentVehicleMenu : Fragment() {
         }
 
         ViewModelDialog.liveDataInputResponse.observe(this.viewLifecycleOwner){
-            it?.let {
-                ViewModelUser.searchUserUID(it)
-                ViewModelUser.searchResult.observe(this.viewLifecycleOwner) {
-                    ViewModelVehicle.transferVehicleOwnership(it.UID)
+            it?.let { userInput ->
+                ViewModelUser.searchUserUID(userInput)
+                ViewModelUser.searchResult.observe(this.viewLifecycleOwner) { searchResult ->
+                    searchResult?.let { result ->
+                        //Hacky solution, check hashcode to differentiate trigger twice bug. Still no root cause
+                        if(result.hashCode() != temporary.hashCode()){
+                            ViewModelVehicle.transferVehicleOwnership(result.UID)
+                            temporary = searchResult
+                            val action = fragmentVehicleMenuDirections.actionVehicleMenuFragmentToVehicleFragment()
+                            findNavController().navigate(action)
+                        }
+                    }
                 }
             }
         }
@@ -51,6 +61,7 @@ class fragmentVehicleMenu : Fragment() {
 
     override fun onStop() {
         ViewModelDialog.clearResponse()
+        ViewModelUser.clearResponse()
         super.onStop()
     }
 }

@@ -2,6 +2,7 @@ package com.sisalma.vehicleandusermanagement.model
 
 data class VehicleInformation(
     val AccKey: String,
+    val MacAddress: String,
     val Manufacturer: String,
     val Model: String,
     val PoliceNum: String,

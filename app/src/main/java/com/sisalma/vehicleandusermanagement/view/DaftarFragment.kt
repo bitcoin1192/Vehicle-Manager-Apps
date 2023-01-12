@@ -5,27 +5,17 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.sisalma.vehicleandusermanagement.R
 import com.sisalma.vehicleandusermanagement.databinding.FragmentDaftarBinding
+import com.sisalma.vehicleandusermanagement.helper.LoginResponseState
+import com.sisalma.vehicleandusermanagement.helper.ViewModelDialog
 import com.sisalma.vehicleandusermanagement.helper.ViewModelLogin
 
 class DaftarFragment : Fragment() {
     private lateinit var binding: FragmentDaftarBinding
-    private val ViewModelLogin: ViewModelLogin by activityViewModels<ViewModelLogin>()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        val callback = object: OnBackPressedCallback(true){
-            override fun handleOnBackPressed() {
-                findNavController().navigate(R.id.action_daftarFragment_to_loginFragment)
-            }
-        }
-        requireActivity().onBackPressedDispatcher.addCallback(this,callback)
-    }
+    private val ViewModelLogin: ViewModelLogin by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -38,6 +28,22 @@ class DaftarFragment : Fragment() {
                 view.editTextTextPassword.text.toString())
             ViewModelLogin.daftarAction()
         }
+
+        ViewModelLogin.status.observe(this.viewLifecycleOwner){ response ->
+            //Hear for success user creation
+            //Run LoginAction
+            //Hear for success login action -> findNavController().navigate(R.id.action_daftarFragment_to_vehicleFragment)
+            when(response){
+                is LoginResponseState.successSignup -> ViewModelLogin.loginAction()
+                is LoginResponseState.successLogin -> {
+                    response?.let {
+                        ViewModelLogin.clearViewModel()
+                        findNavController().navigate(R.id.action_daftarFragment_to_vehicleFragment)
+                    }
+                }
+            }
+        }
+
         return view.root
     }
 }

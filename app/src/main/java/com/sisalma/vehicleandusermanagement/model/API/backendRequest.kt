@@ -70,8 +70,9 @@ class CustomCookies(val cache: CookieCache,val persistence: CookiePersistor): Pe
     }
 }
 class APIEndpoint (context: AppCompatActivity){
-    val BASE_URL = "https://dev-api.sisalma.com/"
-    //val BASE_URL = "http://192.168.30.181:5000/"
+    //val BASE_URL = "https://dev-api.sisalma.com/"
+    val BASE_URL = "http://192.168.30.250:8080/"
+    //val BASE_URL = "http://192.168.137.1:8080/"
     //val BASE_URL = "http://10.21.159.239:5000/"
     val cookieJar = CustomCookies(SetCookieCache(),SharedPrefsCookiePersistor(context.applicationContext))
     val customOkHttpClient = OkHttpClient.Builder()

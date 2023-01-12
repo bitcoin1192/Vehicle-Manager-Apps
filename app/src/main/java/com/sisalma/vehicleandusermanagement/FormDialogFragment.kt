@@ -29,7 +29,6 @@ class FormDialogFragment(): DialogFragment(){
             layout.introMessage.text = it
         }
         layout.okButton.setOnClickListener {
-            _outputString.value = layout.resultMessage.text.toString()
             ViewModelDialog.storeUserResponse(layout.resultMessage.text.toString())
             dismiss()
         }

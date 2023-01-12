@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
+import com.google.gson.Gson
 import com.haroldadmin.cnradapter.NetworkResponse
 import com.sisalma.vehicleandusermanagement.helper.ErrorType
 import com.sisalma.vehicleandusermanagement.helper.ViewModelError
@@ -14,23 +15,77 @@ import kotlinx.coroutines.launch
 class LoginRepository(context: AppCompatActivity, ViewModelError: ViewModelError) {
     private var username = ""
     private var password = ""
-    private var _response: MutableLiveData<NetworkResponse<LoginResponse, ResponseError>> = MutableLiveData()
-    val response: LiveData<NetworkResponse<LoginResponse, ResponseError>> get() = _response
-    private val ViewModelError = ViewModelError
+    private var _response: MutableLiveData<LoginRepoResponse> = MutableLiveData()
+    val response: LiveData<LoginRepoResponse> get() = _response
+    private val errorView = ViewModelError
     private val loginService = APIEndpoint(context).loginService
     private val conteks = context
 
     fun doSignUp(){
         val actionBody = LoginBody("signup",this.username,this.password)
-        runLoginEndpoint(actionBody)
+        conteks.lifecycleScope.launch(Dispatchers.IO){
+            val gson = Gson()
+            val result = loginService.loginEndpoint(actionBody)
+            connectionErrorHandler(result)?.let {
+                when(it) {
+                    is NetworkResponse.Success -> {
+                        _response.postValue(LoginRepoResponse.SignupSuccess(it.body.msg))
+                    }
+                    is NetworkResponse.Error -> {
+                        //Send error to whoever listening
+                    }
+                }
+            }
+        }
     }
 
     fun doLogin(){
         val actionBody = LoginBody("login",this.username,this.password)
-        runLoginEndpoint(actionBody)
+        conteks.lifecycleScope.launch(Dispatchers.IO){
+            val gson = Gson()
+            val result = loginService.loginEndpoint(actionBody)
+            connectionErrorHandler(result)?.let {
+                when(it) {
+                    is NetworkResponse.Success -> {
+                        _response.postValue(LoginRepoResponse.LoginSuccess(it.body.msg))
+                    }
+                    is NetworkResponse.Error -> {
+                        //Send error to whoever listening
+                    }
+                }
+            }
+        }
     }
 
-    private fun runLoginEndpoint(actionBody: LoginBody){
+    private fun connectionErrorHandler(result:NetworkResponse<LoginResponse, ResponseError>): NetworkResponse<LoginResponse, ResponseError>?{
+        var forwardResponse = true
+        when (result) {
+            is NetworkResponse.ServerError -> {
+                result.body?.let {
+                    errorView.setError(ErrorType.ShowableError("Server Error: ".plus(result.code.toString()),it.errMsg))
+                }
+                forwardResponse = false
+            }
+            is NetworkResponse.NetworkError -> {
+                result.body?.let {
+                    errorView.setError(ErrorType.LogableError("Network Error: ",it.errMsg))
+                }
+                Log.e("Retrofit-Networking", result.error.toString())
+                forwardResponse = false
+            }
+            is NetworkResponse.UnknownError -> {
+                Log.e("Retrofit-Unknown", result.error.toString())
+                forwardResponse = false
+            }
+        }
+        if(forwardResponse){
+            return result
+        }
+        return null
+    }
+
+
+    /*private fun runLoginEndpoint(actionBody: LoginBody){
         conteks.lifecycleScope.launch(Dispatchers.IO){
             val result = loginService.loginEndpoint(actionBody)
             var stopResponse = false
@@ -64,11 +119,15 @@ class LoginRepository(context: AppCompatActivity, ViewModelError: ViewModelError
                 _response.postValue(result)
             }
         }
-    }
+    }*/
 
     fun setUser(user: String, pass: String){
         this.username = user
         this.password = pass
         Log.i("LoginRepos","user pass is ${this.password}")
     }
+}
+sealed class LoginRepoResponse{
+    class LoginSuccess(val result: String): LoginRepoResponse()
+    class SignupSuccess(val result: String): LoginRepoResponse()
 }

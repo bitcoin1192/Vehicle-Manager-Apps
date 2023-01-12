@@ -9,6 +9,7 @@ import com.google.gson.Gson
 import com.haroldadmin.cnradapter.NetworkResponse
 import com.sisalma.vehicleandusermanagement.helper.ErrorType
 import com.sisalma.vehicleandusermanagement.helper.ViewModelError
+import com.sisalma.vehicleandusermanagement.helper.userOperationRequest
 import com.sisalma.vehicleandusermanagement.model.SearchResult
 import com.sisalma.vehicleandusermanagement.model.VehicleInformation
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,12 @@ class UserRepository(context: AppCompatActivity, ViewModelError: ViewModelError)
     private var _response: MutableLiveData<UserRepoResponse> = MutableLiveData()
     val response: LiveData<UserRepoResponse> get() = _response
 
+    fun requestParser(input: userOperationRequest){
+        when(input){
+            is userOperationRequest.searchUserUID -> searchUserUID(input.UserQuery)
+            is userOperationRequest.getVehicleList -> getKnownVehicle()
+        }
+    }
     fun editUserData(newPassword: String){
         runEditUserData(UserBody("edit", arrayListOf(UserData(newPassword,""))))
     }
@@ -62,7 +69,9 @@ class UserRepository(context: AppCompatActivity, ViewModelError: ViewModelError)
                 when(it){
                     is NetworkResponse.Success -> {
                         val responseRead = gson.fromJson(it.body.msg,UserKnownVehicle::class.java)
-                        Log.i("Success", responseRead.toString())
+                        responseRead?.let {
+                            Log.i("Success", responseRead.toString())
+                        }
                         _response.postValue(UserRepoResponse.vehicleFetchSuccess(responseRead))
                     }
                 }
@@ -82,7 +91,7 @@ class UserRepository(context: AppCompatActivity, ViewModelError: ViewModelError)
                         if(responseRead.SearchUserResult.size == 1) {
                             _response.postValue(UserRepoResponse.searchSuccess(responseRead))
                         }else{
-                            errorView.setError(ErrorType.ShowableError("Search User: ", "Please type complete username !"))
+                            errorView.setError(ErrorType.ShowableError("Search User: ".format(), "Please type complete username !"))
                         }
                     }
                 }
@@ -120,6 +129,6 @@ class UserRepository(context: AppCompatActivity, ViewModelError: ViewModelError)
 
 sealed class UserRepoResponse{
     class searchSuccess(val result: UserSearch): UserRepoResponse()
-    class vehicleFetchSuccess(val result: UserKnownVehicle): UserRepoResponse()
+    class vehicleFetchSuccess(val result: UserKnownVehicle?): UserRepoResponse()
     class editUserSuccess(val result: UserKnownVehicle): UserRepoResponse()
 }

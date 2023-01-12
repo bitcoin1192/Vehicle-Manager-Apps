@@ -1,10 +1,8 @@
 package com.sisalma.vehicleandusermanagement.helper
 
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.sisalma.vehicleandusermanagement.fragmentVehicleMenuDirections
 import com.sisalma.vehicleandusermanagement.model.API.ListMemberData
 import com.sisalma.vehicleandusermanagement.model.API.MemberData
 import com.sisalma.vehicleandusermanagement.model.API.opResult
@@ -24,8 +22,8 @@ class ViewModelVehicle: ViewModel() {
     private val _bluetoothRequest: MutableLiveData<vehicleOperationRequest> = MutableLiveData()
     val bluetoothRequest: LiveData<vehicleOperationRequest> get() = _bluetoothRequest
 
-    private val _status: MutableLiveData<ResponseState> = MutableLiveData()
-    val status: LiveData<ResponseState> get() = _status
+    private val _status: MutableLiveData<LoginResponseState> = MutableLiveData()
+    val status: LiveData<LoginResponseState> get() = _status
 
     private var latestMemberList : HashMap<Int,MemberData> = HashMap()
     var formMemberList : HashMap<Int,MemberData> = HashMap()
@@ -61,7 +59,7 @@ class ViewModelVehicle: ViewModel() {
 
     private fun showError(msg: String){
         if(fragmentIsShowed and msg.isNotEmpty()){
-            _status.value = ResponseState.isError(msg)
+            _status.value = LoginResponseState.errorLogin(msg)
         }
     }
 

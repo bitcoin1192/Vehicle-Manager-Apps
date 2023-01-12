@@ -1,4 +1,4 @@
-package com.sisalma.vehicleandusermanagement.model.ESPConnection
+package com.sisalma.vehicleandusermanagement.model.BLEStuff
 
 import android.app.Service
 import android.content.Intent

@@ -25,11 +25,6 @@
         android:label="daftarFragment"
         tools:layout="@layout/fragment_daftar">
         <action
-            android:id="@+id/action_daftarFragment_to_loginFragment"
-            app:destination="@id/loginFragment"
-            app:enterAnim="@android:anim/fade_in"
-            app:exitAnim="@android:anim/fade_out" />
-        <action
             android:id="@+id/action_daftarFragment_to_vehicleFragment"
             app:destination="@id/vehicleFragment" />
     </fragment>
@@ -41,6 +36,9 @@
         <action
             android:id="@+id/action_vehicleFragment_to_vehicle_menu_fragment"
             app:destination="@id/VehicleMenuFragment" />
+        <action
+            android:id="@+id/action_vehicleFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
     </fragment>
     <fragment
         android:id="@+id/vehicleEditFragment"
@@ -77,6 +75,9 @@
             android:name="VID"
             app:argType="integer"
             android:defaultValue="0" />
+        <action
+            android:id="@+id/action_VehicleMenuFragment_to_vehicleFragment"
+            app:destination="@id/vehicleFragment" />
     </fragment>
 
 </navigation>

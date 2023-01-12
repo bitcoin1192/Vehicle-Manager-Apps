@@ -18,6 +18,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
+import androidx.core.content.PermissionChecker.PERMISSION_DENIED
+import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -35,17 +37,22 @@ class bluetoothLEDeviceFinder (adapter: BluetoothAdapter, context: Context){
     private val bluetoothLeScanner = adapter.bluetoothLeScanner
     private var scanning = false
     private val handler = Handler(Looper.getMainLooper())
-    private val SCAN_PERIOD = 10000L
+    private val SCAN_PERIOD = 2000L
 
     init {
         Log.i("BLEDeviceFinder","Check for BLE Scan Permission")
+        Log.i("BLEDeviceFinder", ActivityCompat.checkSelfPermission(
+            context,
+            Manifest.permission.BLUETOOTH_SCAN
+        ).toString())
         if(ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.BLUETOOTH_SCAN
-            ) != PackageManager.PERMISSION_GRANTED
+            ) != PERMISSION_GRANTED
         ) {
-            permissionFlag = false
+            permissionFlag = true
             Log.i("BLEDeviceFinder","Permission not Granted")
+
             /*val requestPermissionLauncher =
                 registerForActivityResult(RequestPermission()){
 
@@ -65,12 +72,19 @@ class bluetoothLEDeviceFinder (adapter: BluetoothAdapter, context: Context){
     // Device scan callback.
     private val leScanCallback: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
+            if(result.isConnectable){
+                scanResult.add(result.device)
+                Log.i("BTScan","Printing Device Address: %s".format(result.device.address.toString()))
+            }
             super.onScanResult(callbackType, result)
-            scanResult.add(result.device)
+        }
+        override fun onScanFailed(errorCode: Int) {
+            Log.e("BTScan","Failed scanning device")
+            super.onScanFailed(errorCode)
         }
     }
     @SuppressLint("MissingPermission")
-    private fun scanLeDevice() {
+    fun scanLeDevice() {
         if(permissionFlag) {
             if (!scanning) {
                 // Stops scanning after a pre-defined scan period.
@@ -78,7 +92,7 @@ class bluetoothLEDeviceFinder (adapter: BluetoothAdapter, context: Context){
                     scanning = false
                     bluetoothLeScanner.stopScan(leScanCallback)
                     deviceScanResult.value = scanResult
-                    Log.i("BLEDeviceFinder","Found {} devices".format(scanResult.size))
+                    Log.i("BLEDeviceFinder","Printing List: %s".format(scanResult.toString()))
                 }, SCAN_PERIOD)
                 // Assign callback function when starting to scan
                 scanning = true
@@ -90,10 +104,10 @@ class bluetoothLEDeviceFinder (adapter: BluetoothAdapter, context: Context){
             }
         }
     }
-    fun findLEDevice(Identifier: String):Boolean {
+    fun findLEDevice(MacAddress: String):Boolean {
         if (deviceResult.size != 0) {
             deviceResult.forEach {
-                if (it.address == Identifier) {
+                if (it.address.toString().lowercase() == MacAddress.lowercase()) {
                     return true
                 }
             }
