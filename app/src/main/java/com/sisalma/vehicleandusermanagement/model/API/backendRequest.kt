@@ -1,6 +1,6 @@
 package com.sisalma.vehicleandusermanagement.model.API
 
-import androidx.appcompat.app.AppCompatActivity
+import android.app.Application
 import com.franmontiel.persistentcookiejar.PersistentCookieJar
 import com.franmontiel.persistentcookiejar.cache.CookieCache
 import com.franmontiel.persistentcookiejar.cache.SetCookieCache
@@ -16,10 +16,9 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
 import okhttp3.OkHttpClient
-import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
-data class LoginBody(var intent: String, var username: String, var password: String)
+data class LoginBody(var intent: String, var username: String, var password: String, var macaddress: String?)
 data class LoginResponse(val success: Boolean = true ,var msg: String, var uid: Int)
 
 data class IntentOnly(var intent: String, val changeData: String = "Empty")
@@ -65,16 +64,18 @@ interface VehicleBackend {
 }
 class CustomCookies(val cache: CookieCache,val persistence: CookiePersistor): PersistentCookieJar(cache,persistence){
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+        cache.clear()
         cache.addAll(cookies)
+        persistence.clear()
         persistence.saveAll(cookies)
     }
 }
-class APIEndpoint (context: AppCompatActivity){
+class APIEndpoint (context: Application){
     //val BASE_URL = "https://dev-api.sisalma.com/"
-    val BASE_URL = "http://192.168.30.250:8080/"
+    val BASE_URL = "http://10.21.115.168:8080/"
     //val BASE_URL = "http://192.168.137.1:8080/"
     //val BASE_URL = "http://10.21.159.239:5000/"
-    val cookieJar = CustomCookies(SetCookieCache(),SharedPrefsCookiePersistor(context.applicationContext))
+    val cookieJar = CustomCookies(SetCookieCache(),SharedPrefsCookiePersistor(context))
     val customOkHttpClient = OkHttpClient.Builder()
         .cookieJar(cookieJar)
         .connectTimeout(10,TimeUnit.SECONDS)

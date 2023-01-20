@@ -39,6 +39,9 @@
         <action
             android:id="@+id/action_vehicleFragment_to_loginFragment"
             app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_vehicleFragment_to_vehicle_add_selection"
+            app:destination="@id/vehicle_add_selection" />
     </fragment>
     <fragment
         android:id="@+id/vehicleEditFragment"
@@ -62,7 +65,11 @@
         android:id="@+id/vehicle_add_selection"
         android:name="com.sisalma.vehicleandusermanagement.vehicle_add_selection"
         android:label="fragment_vehicle_add_selection"
-        tools:layout="@layout/fragment_vehicle_add_selection" />
+        tools:layout="@layout/fragment_vehicle_add_selection" >
+        <action
+            android:id="@+id/action_vehicle_add_selection_to_vehicleFragment"
+            app:destination="@id/vehicleFragment" />
+    </fragment>
     <fragment
         android:id="@+id/VehicleMenuFragment"
         android:name="com.sisalma.vehicleandusermanagement.fragmentVehicleMenu"

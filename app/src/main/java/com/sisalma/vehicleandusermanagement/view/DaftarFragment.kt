@@ -26,17 +26,15 @@ class DaftarFragment : Fragment() {
         view.btnDaftar.setOnClickListener {
             ViewModelLogin.setCurrentUser(view.editTextTextPersonName.text.toString(),
                 view.editTextTextPassword.text.toString())
+            //daftarAction will automatically try to call login in loginrepo, just a reminder
             ViewModelLogin.daftarAction()
         }
 
         ViewModelLogin.status.observe(this.viewLifecycleOwner){ response ->
-            //Hear for success user creation
-            //Run LoginAction
-            //Hear for success login action -> findNavController().navigate(R.id.action_daftarFragment_to_vehicleFragment)
-            when(response){
-                is LoginResponseState.successSignup -> ViewModelLogin.loginAction()
-                is LoginResponseState.successLogin -> {
-                    response?.let {
+            //Hear for success user login -> findNavController().navigate(R.id.action_daftarFragment_to_vehicleFragment)
+            response?.let {
+                when(response){
+                    is LoginResponseState.successLogin -> {
                         ViewModelLogin.clearViewModel()
                         findNavController().navigate(R.id.action_daftarFragment_to_vehicleFragment)
                     }

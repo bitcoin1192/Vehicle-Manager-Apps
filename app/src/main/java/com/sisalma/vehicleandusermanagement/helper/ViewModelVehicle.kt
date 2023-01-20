@@ -147,6 +147,10 @@ class ViewModelVehicle: ViewModel() {
         connectDeviceVID(VID)
     }
 
+    fun getNearbyDevice(){
+
+    }
+
     fun connectDeviceVID(VID: Int){
         _bluetoothRequest.value = vehicleOperationRequest.bluetoothConnectRequest("Should be a vid")
     }
@@ -168,4 +172,5 @@ sealed class vehicleOperationRequest(){
     class getVehicleMember(val VID:Int):vehicleOperationRequest()
     class setLockStatus(val lockRequest: Boolean): vehicleOperationRequest()
     class bluetoothConnectRequest(val VID: String): vehicleOperationRequest()
+    class bluetoothSearchRequest():vehicleOperationRequest()
 }

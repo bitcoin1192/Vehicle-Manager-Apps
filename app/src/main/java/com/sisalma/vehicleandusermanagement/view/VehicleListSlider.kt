@@ -1,6 +1,7 @@
 package com.sisalma.vehicleandusermanagement.view
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -36,6 +37,10 @@ class VehicleListSlider(): Fragment() {
         val view = ViewVehicleListBinding.inflate(inflater, container, false)
 
         if(page==0){
+            view.addVehicleButton.visibility = View.VISIBLE
+            view.addVehicleButton.setOnClickListener {
+                Log.i("VehicleAdd", "This button is Clicked !")
+            }
             view.titlePageVehicle.text = "Owned by you"
             view.VehicleList.adapter = EmptyDataPage("Data motor tidak tersedia")
             ViewModelUser.ownedVehicleList.observe(this.viewLifecycleOwner) {

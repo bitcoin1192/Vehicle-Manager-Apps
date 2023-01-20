@@ -42,7 +42,10 @@ class launcher_activity : AppCompatActivity() {
         var binding = ActivityLauncherBinding.inflate(layoutInflater)
         btSetup()
         navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        LoginRepository = LoginRepository(this, ViewModelError)
+        LoginRepository = LoginRepository(this, ViewModelError,"01:00:00:00:00:00")
+        bleFinder?.let {
+            LoginRepository = LoginRepository(this,ViewModelError, it.AdapterAddress())
+        }
         UserRepository = UserRepository(this,ViewModelError)
         VehicleRepository = VehicleRepository(this,ViewModelError,bleService,bleFinder)
         bindViewModelRequest()

@@ -1,21 +1,24 @@
 package com.sisalma.vehicleandusermanagement.helper
 
+import android.app.Application
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.sisalma.vehicleandusermanagement.model.API.LoginBody
 import com.sisalma.vehicleandusermanagement.model.API.LoginRepoResponse
+import com.sisalma.vehicleandusermanagement.model.API.LoginRepository
 import com.sisalma.vehicleandusermanagement.model.API.LoginResponse
 
 
-class ViewModelLogin : ViewModel() {
+class ViewModelLogin(application: Application) : AndroidViewModel(application) {
     private var username = ""
     private var password = ""
     lateinit var savedUser: LoginResponse
     val _currentUser: MutableLiveData<LoginBody> = MutableLiveData<LoginBody>()
     val currentUser : LiveData<LoginBody> get()= _currentUser
-
+    private val loginRepo = LoginRepository(getApplication(),viewModelScope,)
     private val _status: MutableLiveData<LoginResponseState?> = MutableLiveData()
     val status: LiveData<LoginResponseState?> get() = _status
 
@@ -44,7 +47,7 @@ class ViewModelLogin : ViewModel() {
     fun loginAction() {
         if(this.username.isNotBlank() and this.password.isNotBlank()) {
             _response.value = "Waiting..."
-            val test = LoginBody("login",this.username,this.password)
+            val test = LoginBody("login",this.username,this.password,null)
             Log.i("ViewModelLoginInternal",test.intent+
                     " User: "+
                     test.username)
@@ -56,7 +59,7 @@ class ViewModelLogin : ViewModel() {
 
     fun daftarAction(){
         if(this.username.isNotBlank() and this.password.isNotBlank()) {
-            _currentUser.value = LoginBody("signup",this.username,this.password)
+            _currentUser.value = LoginBody("signup",this.username,this.password,null)
         }
     }
 

@@ -12,6 +12,7 @@ import com.sisalma.vehicleandusermanagement.helper.ErrorType
 import com.sisalma.vehicleandusermanagement.helper.ViewModelError
 import com.sisalma.vehicleandusermanagement.helper.vehicleOperationRequest
 import com.sisalma.vehicleandusermanagement.model.BLEStuff.bluetoothLEService
+import com.sisalma.vehicleandusermanagement.model.BluetoothResponse
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,6 +35,7 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
             is vehicleOperationRequest.removeMember->removeFriend(inputRequest.VID,inputRequest.members)
             is vehicleOperationRequest.transferVehicle->transferOwner(inputRequest.VID,inputRequest.targetMember)
             is vehicleOperationRequest.bluetoothConnectRequest->findFromScannedList(inputRequest.VID)
+            is vehicleOperationRequest.bluetoothSearchRequest->findNearbyDevice()
         }
     }
     fun addFriend(VID: Int,UIDTarget: ListMemberData){
@@ -63,6 +65,16 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
         conteks.lifecycleScope.launch(Dispatchers.IO){
             BLEScanner?.scanLeDevice()
             BLEScanner?.findLEDevice(deviceName)
+        }
+    }
+
+    fun findNearbyDevice(){
+        conteks.lifecycleScope.launch(Dispatchers.IO){
+            BLEScanner?.scanLeDevice()?.let {
+                bluetoothErrorHandler(it)?.let {
+
+                }
+            }
         }
     }
 
@@ -137,7 +149,25 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
         }
         return null
     }
+    private fun bluetoothErrorHandler(result:BluetoothResponse): BluetoothResponse?{
+        var forwardResponse = true
+        when(result){
+            is BluetoothResponse.connectionFailed->{
+                errorView.setError(ErrorType.ShowableError("VehicleRepository","Can't estabilish connection to selected macaddress"))
+                forwardResponse = false
+            }
+            is BluetoothResponse.gattFail->{
+                errorView.setError(ErrorType.LogableError("VehicleRepository","GATT Server doesn't not respond, might be signal to low"))
+                forwardResponse = false
+            }
+        }
+        if (forwardResponse){
+            return result
+        }
+        return null
+    }
 }
+
 sealed class opResult{
     class addSuccess: opResult()
     class addError(val errorMsg: String): opResult()
@@ -145,6 +175,8 @@ sealed class opResult{
     class removeError(val errorMsg: String): opResult()
     class transferSuccess: opResult()
     class transferError(val errorMsg: String): opResult()
+    class bluetoothSearchSuccess(): opResult()
+    class bluetoothSearchFailed(): opResult()
     class btSuccesful(val errorMsg: String): opResult()
     class btFail(val errorMsg: String): opResult()
 }

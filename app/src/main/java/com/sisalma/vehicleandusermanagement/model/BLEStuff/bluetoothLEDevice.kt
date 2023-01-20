@@ -7,25 +7,14 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
-import android.content.pm.PackageManager
-import android.view.LayoutInflater
-import android.view.ViewGroup
-import android.widget.TextView
 import androidx.core.app.ActivityCompat
-import androidx.recyclerview.widget.RecyclerView
-import com.sisalma.vehicleandusermanagement.databinding.ViewUserSummaryBinding
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
-import androidx.core.content.PermissionChecker.PERMISSION_DENIED
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import com.sisalma.vehicleandusermanagement.databinding.FragmentEmptyContainerBinding
-import com.sisalma.vehicleandusermanagement.helper.ErrorType
-import com.sisalma.vehicleandusermanagement.helper.ViewModelError
+import kotlinx.coroutines.delay
 
 class bluetoothLEDeviceFinder (adapter: BluetoothAdapter, context: Context){
     private val scanResult: MutableList<BluetoothDevice> = arrayListOf()
@@ -33,11 +22,12 @@ class bluetoothLEDeviceFinder (adapter: BluetoothAdapter, context: Context){
     val LiveDeviceScanResult: LiveData<List<BluetoothDevice>> get() = deviceScanResult
 
     private var permissionFlag = false
-    private val deviceResult: List<BluetoothDevice> = arrayListOf()
+    val deviceResult: List<BluetoothDevice> = arrayListOf()
     private val bluetoothLeScanner = adapter.bluetoothLeScanner
+    private val btAdapterAddress = adapter.address
     private var scanning = false
     private val handler = Handler(Looper.getMainLooper())
-    private val SCAN_PERIOD = 2000L
+    private val SCAN_PERIOD = 3000L
 
     init {
         Log.i("BLEDeviceFinder","Check for BLE Scan Permission")
@@ -84,26 +74,27 @@ class bluetoothLEDeviceFinder (adapter: BluetoothAdapter, context: Context){
         }
     }
     @SuppressLint("MissingPermission")
-    fun scanLeDevice() {
+    suspend fun scanLeDevice(): BluetoothResponse {
         if(permissionFlag) {
             if (!scanning) {
-                // Stops scanning after a pre-defined scan period.
-                handler.postDelayed({
-                    scanning = false
-                    bluetoothLeScanner.stopScan(leScanCallback)
-                    deviceScanResult.value = scanResult
-                    Log.i("BLEDeviceFinder","Printing List: %s".format(scanResult.toString()))
-                }, SCAN_PERIOD)
                 // Assign callback function when starting to scan
                 scanning = true
                 bluetoothLeScanner.startScan(leScanCallback)
+                delay(SCAN_PERIOD)
+                scanning = false
+                bluetoothLeScanner.stopScan(leScanCallback)
+                Log.i("BLEDeviceFinder","Printing List: %s".format(scanResult.toString()))
+                return BluetoothResponse.deviceScanResult(scanResult)
             } else {
                 scanning = false
                 bluetoothLeScanner.stopScan(leScanCallback)
                 deviceScanResult.value = scanResult
+                return BluetoothResponse.deviceScanResult(scanResult)
             }
         }
+        return BluetoothResponse.deviceScanResult(scanResult)
     }
+
     fun findLEDevice(MacAddress: String):Boolean {
         if (deviceResult.size != 0) {
             deviceResult.forEach {
@@ -114,4 +105,18 @@ class bluetoothLEDeviceFinder (adapter: BluetoothAdapter, context: Context){
         }
         return false
     }
+
+    fun AdapterAddress(): String?{
+        if(permissionFlag){
+            return btAdapterAddress.toString()
+        }
+        return null
+    }
+}
+sealed class BluetoothResponse(){
+    class deviceScanResult(var devices: List<BluetoothDevice>): BluetoothResponse()
+    class connectionSuccess(var msg: String): BluetoothResponse()
+    class connectionFailed(var msg: String): BluetoothResponse()
+    class gattSent(var msg: String): BluetoothResponse()
+    class gattFail(var msg: String): BluetoothResponse()
 }
