@@ -21,21 +21,17 @@ class LoginRepository(context: Application, scope:CoroutineScope, ViewModelError
     val response: LiveData<LoginRepoResponse> get() = _response
     private val errorView = ViewModelError
     private val loginService = APIEndpoint(context).loginService
-    private val conteks = context
     private var macaddress: String = "01:00:00:00:00:00"
 
     init {
         macadress?.let {
-            macaddress = it
+            this.macaddress = it
         }
     }
 
     fun doSignUp(){
         val actionBody = LoginBody("signup",this.username,this.password,this.macaddress)
         scope.launch(Dispatchers.IO) {
-
-        }
-        conteks.lifecycleScope.launch(Dispatchers.IO){
             val result = loginService.loginEndpoint(actionBody)
             connectionErrorHandler(result)?.let {
                 when(it) {
@@ -52,7 +48,7 @@ class LoginRepository(context: Application, scope:CoroutineScope, ViewModelError
 
     fun doLogin(){
         val actionBody = LoginBody("login",this.username,this.password, this.macaddress)
-        conteks.lifecycleScope.launch(Dispatchers.IO){
+        scope.launch(Dispatchers.IO){
             val result = loginService.loginEndpoint(actionBody)
             connectionErrorHandler(result)?.let {
                 when(it) {

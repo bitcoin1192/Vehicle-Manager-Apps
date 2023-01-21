@@ -15,7 +15,6 @@ import com.sisalma.vehicleandusermanagement.model.API.LoginResponse
 class ViewModelLogin(application: Application) : AndroidViewModel(application) {
     private var username = ""
     private var password = ""
-    lateinit var savedUser: LoginResponse
     val _currentUser: MutableLiveData<LoginBody> = MutableLiveData<LoginBody>()
     val currentUser : LiveData<LoginBody> get()= _currentUser
     private val loginRepo = LoginRepository(getApplication(),viewModelScope,)
@@ -61,6 +60,10 @@ class ViewModelLogin(application: Application) : AndroidViewModel(application) {
         if(this.username.isNotBlank() and this.password.isNotBlank()) {
             _currentUser.value = LoginBody("signup",this.username,this.password,null)
         }
+    }
+
+    fun errorListener(){
+        _status.value = err
     }
 
     fun clearViewModel(){
