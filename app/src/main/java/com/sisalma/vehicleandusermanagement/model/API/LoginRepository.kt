@@ -73,53 +73,7 @@ class LoginRepository(context: Application, scope:CoroutineScope, macadress: Str
                 Log.e("LoginRepository",result.error.toString())
                 Pair(null,null)
             }
-            /*else -> {
-                Pair(null, result.toString().let {
-                    ErrorType.ShowableError("LoginRepository", it)
-                }
-                )
-            }*/
         }
-        /*connectionErrorHandler(result)?.first.also {
-            return when(it) {
-                is NetworkResponse.Success -> {
-
-                    //_response.postValue(LoginRepoResponse.LoginSuccess(it.body.msg))
-                }
-                is NetworkResponse.ServerError -> pass.toString()
-                is NetworkResponse.NetworkError -> TODO()
-                is NetworkResponse.UnknownError -> TODO()
-                null -> TODO()
-            }
-        }
-        connectionErrorHandler(result)?.second.also {
-            return Pair(null,it)
-        }*/
-    }
-
-    private fun connectionErrorHandler(result:NetworkResponse<LoginResponse, ResponseError>): Pair<NetworkResponse<LoginResponse, ResponseError>?,ErrorType?>?{
-        var forwardResponse = true
-        when (result) {
-            is NetworkResponse.ServerError -> {
-                result.body?.let {
-                    Log.e("Retrofit-Networking", it.errMsg)
-                    return Pair(null,ErrorType.ShowableError("Server Error: ".plus(result.code.toString()),it.errMsg))
-                }
-                forwardResponse = false
-            }
-            is NetworkResponse.NetworkError -> {
-                /*result.body?.let {
-                    _error.value = ErrorType.LogableError("Network Error: ",it.errMsg)
-                }*/
-                Log.e("Retrofit-Networking", result.error.toString())
-                forwardResponse = false
-            }
-            is NetworkResponse.UnknownError -> {
-                Log.e("Retrofit-Unknown", result.error.toString())
-                forwardResponse = false
-            }
-        }
-    return null
     }
 }
 

@@ -35,7 +35,7 @@ class VehicleFragment : Fragment() {
         })
         VehicleListAdapter = VehicleListFragmentHolder(this, 2)
         VehicleListAdapter.SignalNextPage.observe(this.viewLifecycleOwner){
-            accessVehicleMenu(it)
+            //accessVehicleMenu(it)
         }
 
         childFragmentManager.setFragmentResultListener("fragmentFinish",this.viewLifecycleOwner){key, bundle->

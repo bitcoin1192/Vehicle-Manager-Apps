@@ -32,7 +32,7 @@ class VehicleEdit: Fragment() {
         val view = FragmentVehicleEditBinding.inflate(inflater, container, false)
         view.noUserMessage.text = "Waiting for data to arrive"
 
-        ViewModelVehicle.vehicleMemberData.observe(this.viewLifecycleOwner){ list ->
+        ViewModelVehicle.vehicleMemberData.observe(viewLifecycleOwner){ list ->
             list?.let {
                 view.removeButton.visibility = View.INVISIBLE
                 view.noUserMessage.visibility = View.INVISIBLE
@@ -67,10 +67,10 @@ class VehicleEdit: Fragment() {
             }
         }
 
-        ViewModelDialog.liveDataInputResponse.observe(this.viewLifecycleOwner){ queryName ->
+        ViewModelDialog.liveDataInputResponse.observe(viewLifecycleOwner){ queryName ->
             queryName?.let { query->
                 ViewModelUser.searchUserUID(query)
-                ViewModelUser.searchResult.observe(this.viewLifecycleOwner){ SResult ->
+                ViewModelUser.searchResult.observe(viewLifecycleOwner){ SResult ->
                     SResult?.let {
                         if(it.hashCode() != temporary.hashCode()) {
                             ViewModelVehicle.updateMemberData(
@@ -92,7 +92,6 @@ class VehicleEdit: Fragment() {
         return view.root
     }
     override fun onStop() {
-        ViewModelVehicle.clearViewableMemberData()
         ViewModelDialog.clearResponse()
         super.onStop()
     }

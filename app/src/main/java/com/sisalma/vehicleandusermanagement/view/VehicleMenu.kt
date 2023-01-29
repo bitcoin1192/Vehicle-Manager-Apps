@@ -28,7 +28,7 @@ class fragmentVehicleMenu : Fragment() {
         val view = FragmentVehicleMenuBinding.inflate(inflater,container,false)
         // TODO(Fill in each image button with findNavController().navigate(action) to navigate to next destination fragment)
         view.imgEditUser.setOnClickListener{
-            ViewModelVehicle.showViewableMemberData()
+            //ViewModelVehicle.showViewableMemberData()
             val action = fragmentVehicleMenuDirections.actionVehicleMenuFragmentToVehicleEditFragment()
             findNavController().navigate(action)
         }

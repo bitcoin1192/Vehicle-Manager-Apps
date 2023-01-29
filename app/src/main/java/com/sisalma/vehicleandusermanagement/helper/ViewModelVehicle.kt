@@ -3,16 +3,14 @@ package com.sisalma.vehicleandusermanagement.helper
 import android.app.Application
 import android.bluetooth.BluetoothManager
 import android.content.Context
-import android.content.Context.MODE_PRIVATE
-import android.content.SharedPreferences
 import android.util.Log
-import androidx.core.content.getSystemService
 import androidx.lifecycle.*
 import com.sisalma.vehicleandusermanagement.model.API.ListMemberData
 import com.sisalma.vehicleandusermanagement.model.API.MemberData
 import com.sisalma.vehicleandusermanagement.model.API.VehicleRepository
 import com.sisalma.vehicleandusermanagement.model.API.opResult
 import com.sisalma.vehicleandusermanagement.model.BLEStuff.bluetoothLEService
+import com.sisalma.vehicleandusermanagement.model.BluetoothResponse
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import com.sisalma.vehicleandusermanagement.view.memberDataWrapper
 import kotlinx.coroutines.Dispatchers
@@ -37,16 +35,17 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
     private val _bluetoothRequest: MutableLiveData<vehicleOperationRequest> = MutableLiveData()
     val bluetoothRequest: LiveData<vehicleOperationRequest> get() = _bluetoothRequest
 
-    private val _status: MutableLiveData<LoginResponseState> = MutableLiveData()
-    val status: LiveData<LoginResponseState> get() = _status
+    private val _error: MutableLiveData<ErrorType> = MutableLiveData()
+    val error: LiveData<ErrorType> get() = _error
 
     private var latestMemberList : HashMap<Int,MemberData> = HashMap()
     var formMemberList : HashMap<Int,MemberData> = HashMap()
 
-    private val _nearbyVehicleList: MutableLiveData<LoginResponseState> = MutableLiveData()
-    val nearbyVehicleList: LiveData<LoginResponseState> get() = _nearbyVehicleList
+    private val _nearbyVehicleList: MutableLiveData<ListMemberData> = MutableLiveData()
+    val nearbyVehicleList: LiveData<ListMemberData> get() = _nearbyVehicleList
 
     init{
+        vehicleRepository = VehicleRepository(getApplication(),null,null)
         btMan.adapter?.let { adapter ->
             Log.i("ViewModelVehicle","Bluetooth Adapter is found !")
             bleFinder = bluetoothLEDeviceFinder.getInstance(adapter,getApplication())
@@ -54,6 +53,7 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
             if (bleFinder.permissionFlag == true){
                 viewModelScope.launch(Dispatchers.IO){
                     bleFinder.scanLeDevice()
+                    vehicleRepository = VehicleRepository(getApplication(),bleService,bleFinder)
                 }
             }else{
                 _bluetoothRequest.value = vehicleOperationRequest.bluetoothPermisionRequest()
@@ -61,12 +61,12 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
         }
     }
     fun reloadBtAdapter(){
-        btMan.adapter?.let {adapter ->
+        btMan.adapter?.let {
             bleFinder.checkPermission(getApplication())
-            if (bleFinder.permissionFlag == true){
+            if (bleFinder.permissionFlag){
                 viewModelScope.launch(Dispatchers.IO){
                     bleFinder.scanLeDevice()
-
+                    vehicleRepository = VehicleRepository(getApplication(),bleService,bleFinder)
                 }
             }else{
                 Log.i("BLEFinder", "Permission Error")
@@ -74,7 +74,7 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
         }
     }
     fun operationStatus(opRes: opResult){
-        when(opRes){
+        /*when(opRes){
             is opResult.addSuccess->{
                 getMemberData()
             }
@@ -99,17 +99,23 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
             is opResult.btFail->{
                 showError("Fail to do bluetooth operation")
             }
+        }*/
+    }
+
+    private fun showError(errorType: ErrorType){
+        if(fragmentIsShowed){
+            _error.value = errorType
         }
     }
 
-    private fun showError(msg: String){
-        if(fragmentIsShowed and msg.isNotEmpty()){
-            _status.value = LoginResponseState.errorLogin(msg)
+    private suspend fun getMemberData(){
+        val result = vehicleRepository.getVehicleSummary(selectedVID)
+        result.first?.let {
+            _vehicleMemberData.postValue(it)
         }
-    }
-
-    private fun getMemberData(){
-        _requestVehicleData.value = vehicleOperationRequest.getVehicleMember(selectedVID)
+        result.second?.let {
+            showError(it)
+        }
     }
 
     fun updateMemberData(input:memberDataWrapper){
@@ -124,21 +130,34 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
     }
 
     fun removeMember(input: HashMap<Int,MemberData>){
-        val list = arrayListOf<MemberData>()
-        input.values.forEach{ memberData ->
-            list.add(memberData)
+        viewModelScope.launch {
+            val list = arrayListOf<MemberData>()
+            input.values.forEach{ memberData ->
+                list.add(memberData)
+            }
+            vehicleRepository.removeFriend(selectedVID, ListMemberData(list))
+            getMemberData()
         }
-        _requestVehicleData.value = vehicleOperationRequest.removeMember(selectedVID,ListMemberData(list))
-        formMemberList.clear()
     }
 
     fun addMember(input: HashMap<Int,MemberData>){
-        val list = arrayListOf<MemberData>()
-        input.values.forEach{ memberData ->
-            list.add(memberData)
+        viewModelScope.launch(Dispatchers.IO) {
+            val list = arrayListOf<MemberData>()
+            input.values.forEach{ memberData ->
+                list.add(memberData)
+            }
+            vehicleRepository.addFriend(selectedVID,ListMemberData(list))
+            formMemberList.clear()
+            getMemberData()
         }
-        _requestVehicleData.value = vehicleOperationRequest.addMember(selectedVID,ListMemberData(list))
-        formMemberList.clear()
+    }
+    fun transferVehicleOwnership(targetUID: Int){
+        viewModelScope.launch {
+            val formRequest = MemberData("",targetUID,"")
+            val list = arrayListOf<MemberData>()
+            list.add(formRequest)
+            vehicleRepository.transferOwner(selectedVID,formRequest)
+        }
     }
 
     fun setMemberData(latestList :ListMemberData){
@@ -157,17 +176,12 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
         }
         _vehicleMemberData.value = ListMemberData(list)
     }
+
     fun showViewableMemberData(){
         showMemberData()
     }
     fun clearViewableMemberData(){
         _vehicleMemberData.value = null
-    }
-    fun transferVehicleOwnership(targetUID: Int){
-        val formRequest = MemberData("",targetUID,"")
-        val list = arrayListOf<MemberData>()
-        list.add(formRequest)
-        _requestVehicleData.value = vehicleOperationRequest.transferVehicle(selectedVID, formRequest)
     }
 
     //Below this line, all function require bluetooth le to connect to Pi-Zero
@@ -188,16 +202,31 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
 
     fun setVID(VID: Int){
         selectedVID = VID
-        getMemberData()
+        viewModelScope.launch(Dispatchers.IO) {
+            getMemberData()
+        }
         connectDeviceVID(VID)
     }
 
     fun getNearbyDevice(){
-
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = vehicleRepository.findNearbyDevice()
+            when(result){
+                is BluetoothResponse.deviceScanResult->{
+                    val list: MutableList<MemberData> = arrayListOf()
+                    result.devices.forEach{
+                        list.add(MemberData(it.address.toString(),0,""))
+                    }
+                    _nearbyVehicleList.postValue(ListMemberData(list))
+                }
+            }
+        }
     }
 
     fun connectDeviceVID(VID: Int){
-        _bluetoothRequest.value = vehicleOperationRequest.bluetoothConnectRequest("Should be a vid")
+        viewModelScope.launch(Dispatchers.IO) {
+            vehicleRepository.findFromScannedList("MacAddress bruh")
+        }
     }
 
     fun connectedToDevice(status: Boolean){

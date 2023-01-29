@@ -39,7 +39,7 @@ class bluetoothLEDeviceFinder private constructor(){
     lateinit var btAdapterAddress: String
     private var scanning = false
     private val handler = Handler(Looper.getMainLooper())
-    private val SCAN_PERIOD = 3000L
+    private val SCAN_PERIOD = 2000L
 
     companion object{
         @Volatile private var bleFinder:bluetoothLEDeviceFinder ? = null
@@ -87,7 +87,7 @@ class bluetoothLEDeviceFinder private constructor(){
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             if(result.isConnectable){
                 scanResult.add(result.device)
-                Log.i("BTScan","Printing Device Address: %s".format(result.device.address.toString()))
+                //Log.i("BTScan","Printing Device Address: %s".format(result.device.address.toString()))
             }
             super.onScanResult(callbackType, result)
         }
@@ -102,6 +102,7 @@ class bluetoothLEDeviceFinder private constructor(){
             if (!scanning) {
                 // Assign callback function when starting to scan
                 scanning = true
+                scanResult.clear()
                 bluetoothLeScanner.startScan(leScanCallback)
                 delay(SCAN_PERIOD)
                 scanning = false

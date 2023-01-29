@@ -45,7 +45,6 @@ class launcher_activity : AppCompatActivity() {
         //btSetup()
         navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         UserRepository = UserRepository(this.application,this,ViewModelError)
-        VehicleRepository = VehicleRepository(this.application,this,ViewModelError,bleService,bleFinder)
         bindViewModelRequest()
         bindViewModelRepository()
         bindViewModelStatus()
@@ -106,12 +105,6 @@ class launcher_activity : AppCompatActivity() {
         UserRepository.response.observe(this){
             ViewModelUser.setResponse(it)
         }
-        VehicleRepository.responseStatus.observe(this){
-            ViewModelVehicle.operationStatus(it)
-        }
-        VehicleRepository.responseMember.observe(this){ MemberList ->
-            ViewModelVehicle.setMemberData(MemberList)
-        }
     }
 
     fun bindViewModelStatus(){
@@ -122,15 +115,11 @@ class launcher_activity : AppCompatActivity() {
                 }
             }
         }
-        ViewModelVehicle.status.observe(this){
-            when(it){
-                is LoginResponseState.errorLogin->{
-                    ViewModelError.setError(ErrorType.ShowableError("ViewModelVehicle",it.errorMsg))
-                }
-            }
+        ViewModelVehicle.error.observe(this){
+            ViewModelError.setError(it)
         }
         ViewModelLogin.error.observe(this){
-                ViewModelError.setError(it)
+            ViewModelError.setError(it)
         }
     }
 
