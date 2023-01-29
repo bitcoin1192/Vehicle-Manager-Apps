@@ -19,12 +19,12 @@ class vehicle_add_selection : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         val view = FragmentVehicleAddSelectionBinding.inflate(inflater, container, false)
-        ViewModelVehicle.
+        ViewModelVehicle.getNearbyDevice()
         view.bluetoothSearchTitle.text
 
-        view.bluetoothDeviceRCView.adapter = UserListRCViewAdapter(){
+        /*view.bluetoothDeviceRCView.adapter = UserListRCViewAdapter(){
             View
-        }
+        }*/
         return view.root
     }
 }

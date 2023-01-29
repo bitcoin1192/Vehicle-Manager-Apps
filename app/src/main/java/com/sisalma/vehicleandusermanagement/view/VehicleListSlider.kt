@@ -35,11 +35,13 @@ class VehicleListSlider(): Fragment() {
             }
         }
         val view = ViewVehicleListBinding.inflate(inflater, container, false)
-
         if(page==0){
             view.addVehicleButton.visibility = View.VISIBLE
             view.addVehicleButton.setOnClickListener {
                 Log.i("VehicleAdd", "This button is Clicked !")
+            }
+            view.addVehicleButton.setOnClickListener{
+                setFragmentResult("fragmentFinish", bundleOf(Pair("vehicleAdditionPage",1)))
             }
             view.titlePageVehicle.text = "Owned by you"
             view.VehicleList.adapter = EmptyDataPage("Data motor tidak tersedia")

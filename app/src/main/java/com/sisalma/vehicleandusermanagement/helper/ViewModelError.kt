@@ -8,6 +8,10 @@ import androidx.lifecycle.ViewModel
 class ViewModelError: ViewModel() {
     val _showableErrorListener: MutableLiveData<ErrorType.ShowableError> = MutableLiveData()
     val showableErrorListener: LiveData<ErrorType.ShowableError> get() = _showableErrorListener
+
+    init {
+        
+    }
     fun setError(error: ErrorType){
         when(error){
             is ErrorType.ShowableError->{

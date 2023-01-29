@@ -1,5 +1,6 @@
 package com.sisalma.vehicleandusermanagement.model.API
 
+import android.app.Application
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
@@ -18,9 +19,9 @@ import kotlinx.coroutines.launch
 data class UserKnownVehicle(val BorrowedVehicle: List<VehicleInformation>, val OwnedVehicle:List<VehicleInformation>)
 data class UserSearch(val SearchUserResult: List<SearchResult>)
 
-class UserRepository(context: AppCompatActivity, ViewModelError: ViewModelError) {
-    private val retroService = APIEndpoint(context)
-    private val endPointService = retroService.userService
+class UserRepository(context: Application,activity: AppCompatActivity, ViewModelError: ViewModelError) {
+    private val activity = activity
+    private val endPointService = APIEndpoint.getInstance(context).userService
     private val conteks = context
     private val errorView = ViewModelError
     private var _response: MutableLiveData<UserRepoResponse> = MutableLiveData()
@@ -44,7 +45,7 @@ class UserRepository(context: AppCompatActivity, ViewModelError: ViewModelError)
     }
 
     private fun runEditUserData(actionBody: UserBody){
-        conteks.lifecycleScope.launch(Dispatchers.IO){
+        activity.lifecycleScope.launch(Dispatchers.IO){
             val gson = Gson()
             val result = endPointService.editUserData(actionBody)
             connectionErrorHandler(result)?.let {
@@ -62,7 +63,7 @@ class UserRepository(context: AppCompatActivity, ViewModelError: ViewModelError)
     }
 
     private fun runGetVehicle(actionBody: IntentOnly){
-        conteks.lifecycleScope.launch(Dispatchers.IO){
+        activity.lifecycleScope.launch(Dispatchers.IO){
             val result = endPointService.getKnownVehicle(actionBody)
             val gson = Gson()
             connectionErrorHandler(result)?.let {
@@ -80,7 +81,7 @@ class UserRepository(context: AppCompatActivity, ViewModelError: ViewModelError)
     }
 
     private fun searchUID(query: UserBody){
-        conteks.lifecycleScope.launch(Dispatchers.IO){
+        activity.lifecycleScope.launch(Dispatchers.IO){
             val result = endPointService.searchUserUID(query)
             val gson = Gson()
             connectionErrorHandler(result)?.let {

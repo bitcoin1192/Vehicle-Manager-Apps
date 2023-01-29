@@ -1,5 +1,6 @@
 package com.sisalma.vehicleandusermanagement.model.API
 
+import android.app.Application
 import android.bluetooth.BluetoothAdapter
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -17,11 +18,11 @@ import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelError, BLEService: bluetoothLEService?, BLEFinder: bluetoothLEDeviceFinder?) {
+class VehicleRepository(context: Application,activity: AppCompatActivity,ViewModelError: ViewModelError, BLEService: bluetoothLEService?, BLEFinder: bluetoothLEDeviceFinder?) {
     private val BLEScanner: bluetoothLEDeviceFinder?  = BLEFinder
     private val conteks = context
-    private val retroService = APIEndpoint(context)
-    private val endPointService = retroService.vehicleService
+    private val activity = activity
+    private val endPointService = APIEndpoint.getInstance(context).vehicleService
     private val errorView = ViewModelError
     private var _responseMember: MutableLiveData<ListMemberData> = MutableLiveData()
     val responseMember: LiveData<ListMemberData> get() = _responseMember
@@ -62,14 +63,14 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
     }
 
     fun findFromScannedList(deviceName: String){
-        conteks.lifecycleScope.launch(Dispatchers.IO){
+        activity.lifecycleScope.launch(Dispatchers.IO){
             BLEScanner?.scanLeDevice()
             BLEScanner?.findLEDevice(deviceName)
         }
     }
 
     fun findNearbyDevice(){
-        conteks.lifecycleScope.launch(Dispatchers.IO){
+        activity.lifecycleScope.launch(Dispatchers.IO){
             BLEScanner?.scanLeDevice()?.let {
                 bluetoothErrorHandler(it)?.let {
 
@@ -79,7 +80,7 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
     }
 
     private fun runAddFriend(actionBody: GroupBody){
-        conteks.lifecycleScope.launch(Dispatchers.IO){
+        activity.lifecycleScope.launch(Dispatchers.IO){
             val result = endPointService.addFriend(actionBody)
             connectionErrorHandler(result)?.let { OKResponse ->
                 when(OKResponse){
@@ -90,7 +91,7 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
         }
     }
     private fun runRemoveFriend(actionBody: GroupBody){
-        conteks.lifecycleScope.launch(Dispatchers.IO){
+        activity.lifecycleScope.launch(Dispatchers.IO){
             val result = endPointService.removeFriend(actionBody)
             connectionErrorHandler(result)?.let { OKResponse ->
                 when(OKResponse){
@@ -101,7 +102,7 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
         }
     }
     private fun runTransferOwnership(actionBody: GroupBody){
-        conteks.lifecycleScope.launch(Dispatchers.IO){
+        activity.lifecycleScope.launch(Dispatchers.IO){
             val result = endPointService.transferOwnership(actionBody)
             connectionErrorHandler(result)?.let { OKResponse ->
                 when(OKResponse){
@@ -112,7 +113,7 @@ class VehicleRepository(context: AppCompatActivity,ViewModelError: ViewModelErro
         }
     }
     private fun runGetVehicleMember(actionBody: GroupBody){
-        conteks.lifecycleScope.launch(Dispatchers.IO){
+        activity.lifecycleScope.launch(Dispatchers.IO){
             val result = endPointService.getVehicleSummary(actionBody)
             val gson  = Gson()
             connectionErrorHandler(result)?.let { OKResponse ->

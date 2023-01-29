@@ -16,9 +16,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
 import okhttp3.OkHttpClient
+import okhttp3.internal.cacheGet
 import java.util.concurrent.TimeUnit
 
-data class LoginBody(var intent: String, var username: String, var password: String, var macaddress: String?)
+data class LoginBody(var intent: String, var username: String, var password: String, var macaddress: String?, var simnumber: String?)
 data class LoginResponse(val success: Boolean = true ,var msg: String, var uid: Int)
 
 data class IntentOnly(var intent: String, val changeData: String = "Empty")
@@ -70,36 +71,51 @@ class CustomCookies(val cache: CookieCache,val persistence: CookiePersistor): Pe
         persistence.saveAll(cookies)
     }
 }
-class APIEndpoint (context: Application){
+class APIEndpoint private constructor(){
+    companion object{
+        // the volatile modifier guarantees that any thread that
+        // reads a field will see the most recently written value
+        @Volatile private var api: APIEndpoint? = null
+        fun getInstance(context: Application) = api ?: synchronized(this){
+
+            api ?: APIEndpoint().also {
+                it.cookieJar = CustomCookies(SetCookieCache(),SharedPrefsCookiePersistor(context))
+                api = it
+            }
+        }
+    }
+
     //val BASE_URL = "https://dev-api.sisalma.com/"
-    val BASE_URL = "http://10.21.115.168:8080/"
+    val BASE_URL = "http://192.168.30.250:8080/"
     //val BASE_URL = "http://192.168.137.1:8080/"
     //val BASE_URL = "http://10.21.159.239:5000/"
-    val cookieJar = CustomCookies(SetCookieCache(),SharedPrefsCookiePersistor(context))
-    val customOkHttpClient = OkHttpClient.Builder()
-        .cookieJar(cookieJar)
-        .connectTimeout(10,TimeUnit.SECONDS)
-        .readTimeout(20,TimeUnit.SECONDS)
-        .build()
+    lateinit var cookieJar: CustomCookies
+    fun getHTTPClient():Retrofit{
+        val customOkHttpClient = OkHttpClient.Builder()
+            .cookieJar(cookieJar)
+            .connectTimeout(15,TimeUnit.SECONDS)
+            .readTimeout(20,TimeUnit.SECONDS)
+            .build()
 
-    val retrofit = Retrofit.Builder()
-        .addConverterFactory(GsonConverterFactory.create())
-        .addCallAdapterFactory(NetworkResponseAdapterFactory())
-        .baseUrl(BASE_URL)
-        .client(customOkHttpClient)
-        .build()
+        return Retrofit.Builder()
+            .addConverterFactory(GsonConverterFactory.create())
+            .addCallAdapterFactory(NetworkResponseAdapterFactory())
+            .baseUrl(BASE_URL)
+            .client(customOkHttpClient)
+            .build()
+    }
 
     val loginService by lazy {
-        retrofit.create(BackendService::class.java)
+        getHTTPClient().create(BackendService::class.java)
     }
     val userService by lazy {
-        retrofit.create(UserBackend::class.java)
+        getHTTPClient().create(UserBackend::class.java)
     }
     val vehicleService by lazy {
-        retrofit.create(VehicleBackend::class.java)
+        getHTTPClient().create(VehicleBackend::class.java)
     }
 }
-open class SingletonHolder<out T: Any, in A>(creator: (A) -> T) {
+/*open class SingletonHolder<out T: Any, in A>(creator: (A) -> T) {
     private var creator: ((A) -> T)? = creator
     @Volatile private var instance: T? = null
 
@@ -122,3 +138,4 @@ open class SingletonHolder<out T: Any, in A>(creator: (A) -> T) {
         }
     }
 }
+*/

@@ -1,14 +1,29 @@
 package com.sisalma.vehicleandusermanagement.helper
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.bluetooth.BluetoothManager
+import android.content.Context
+import android.content.Context.MODE_PRIVATE
+import android.content.SharedPreferences
+import android.util.Log
+import androidx.core.content.getSystemService
+import androidx.lifecycle.*
 import com.sisalma.vehicleandusermanagement.model.API.ListMemberData
 import com.sisalma.vehicleandusermanagement.model.API.MemberData
+import com.sisalma.vehicleandusermanagement.model.API.VehicleRepository
 import com.sisalma.vehicleandusermanagement.model.API.opResult
+import com.sisalma.vehicleandusermanagement.model.BLEStuff.bluetoothLEService
+import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import com.sisalma.vehicleandusermanagement.view.memberDataWrapper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-class ViewModelVehicle: ViewModel() {
+class ViewModelVehicle(application: Application): AndroidViewModel(application) {
+    private val btMan = getApplication<Application>().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    lateinit var bleFinder : bluetoothLEDeviceFinder
+    lateinit var bleService : bluetoothLEService
+    lateinit var vehicleRepository: VehicleRepository
+
     var fragmentIsShowed = false
     private var selectedVID = 0
     private var bluetoothConnectionStatus: Boolean = false
@@ -16,8 +31,8 @@ class ViewModelVehicle: ViewModel() {
     private val _requestVehicleData: MutableLiveData<vehicleOperationRequest> = MutableLiveData()
     val requestMemberData: LiveData<vehicleOperationRequest> get() = _requestVehicleData
 
-    private val _vehicleMemberData: MutableLiveData<ListMemberData> = MutableLiveData()
-    val vehicleMemberData: LiveData<ListMemberData> get() = _vehicleMemberData
+    private val _vehicleMemberData: MutableLiveData<ListMemberData?> = MutableLiveData()
+    val vehicleMemberData: LiveData<ListMemberData?> get() = _vehicleMemberData
 
     private val _bluetoothRequest: MutableLiveData<vehicleOperationRequest> = MutableLiveData()
     val bluetoothRequest: LiveData<vehicleOperationRequest> get() = _bluetoothRequest
@@ -28,6 +43,36 @@ class ViewModelVehicle: ViewModel() {
     private var latestMemberList : HashMap<Int,MemberData> = HashMap()
     var formMemberList : HashMap<Int,MemberData> = HashMap()
 
+    private val _nearbyVehicleList: MutableLiveData<LoginResponseState> = MutableLiveData()
+    val nearbyVehicleList: LiveData<LoginResponseState> get() = _nearbyVehicleList
+
+    init{
+        btMan.adapter?.let { adapter ->
+            Log.i("ViewModelVehicle","Bluetooth Adapter is found !")
+            bleFinder = bluetoothLEDeviceFinder.getInstance(adapter,getApplication())
+            bleService = bluetoothLEService()
+            if (bleFinder.permissionFlag == true){
+                viewModelScope.launch(Dispatchers.IO){
+                    bleFinder.scanLeDevice()
+                }
+            }else{
+                _bluetoothRequest.value = vehicleOperationRequest.bluetoothPermisionRequest()
+            }
+        }
+    }
+    fun reloadBtAdapter(){
+        btMan.adapter?.let {adapter ->
+            bleFinder.checkPermission(getApplication())
+            if (bleFinder.permissionFlag == true){
+                viewModelScope.launch(Dispatchers.IO){
+                    bleFinder.scanLeDevice()
+
+                }
+            }else{
+                Log.i("BLEFinder", "Permission Error")
+            }
+        }
+    }
     fun operationStatus(opRes: opResult){
         when(opRes){
             is opResult.addSuccess->{
@@ -173,4 +218,5 @@ sealed class vehicleOperationRequest(){
     class setLockStatus(val lockRequest: Boolean): vehicleOperationRequest()
     class bluetoothConnectRequest(val VID: String): vehicleOperationRequest()
     class bluetoothSearchRequest():vehicleOperationRequest()
+    class bluetoothPermisionRequest():vehicleOperationRequest()
 }

@@ -2,62 +2,85 @@ package com.sisalma.vehicleandusermanagement.model
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Application
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.ActivityCompat
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.franmontiel.persistentcookiejar.cache.SetCookieCache
+import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersistor
+import com.sisalma.vehicleandusermanagement.model.API.APIEndpoint
+import com.sisalma.vehicleandusermanagement.model.API.CustomCookies
 import kotlinx.coroutines.delay
 
-class bluetoothLEDeviceFinder (adapter: BluetoothAdapter, context: Context){
+class bluetoothLEDeviceFinder private constructor(){
     private val scanResult: MutableList<BluetoothDevice> = arrayListOf()
     private val deviceScanResult: MutableLiveData<List<BluetoothDevice>> = MutableLiveData()
     val LiveDeviceScanResult: LiveData<List<BluetoothDevice>> get() = deviceScanResult
 
-    private var permissionFlag = false
+    var permissionFlag = false
     val deviceResult: List<BluetoothDevice> = arrayListOf()
-    private val bluetoothLeScanner = adapter.bluetoothLeScanner
-    private val btAdapterAddress = adapter.address
+    lateinit var bluetoothLeScanner: BluetoothLeScanner
+
+    //Adapter MAC Address is constant "02::", problem arise if we're going to use this mac as account auth factor...
+    lateinit var btAdapterAddress: String
     private var scanning = false
     private val handler = Handler(Looper.getMainLooper())
     private val SCAN_PERIOD = 3000L
 
-    init {
+    companion object{
+        @Volatile private var bleFinder:bluetoothLEDeviceFinder ? = null
+        fun getInstance(adapter: BluetoothAdapter?, context: Application) = bleFinder ?: synchronized(this){
+            bleFinder ?: bluetoothLEDeviceFinder().also { btFinder ->
+                adapter?.let {
+                    btFinder.btAdapterAddress = it.address
+                    btFinder.bluetoothLeScanner = it.bluetoothLeScanner
+                    btFinder.checkPermission(context)
+                }
+            }
+        }
+        fun reloadPermission(context: Application){
+            bleFinder?.checkPermission(context)
+        }
+    }
+    fun checkPermission(context: Application){
         Log.i("BLEDeviceFinder","Check for BLE Scan Permission")
-        Log.i("BLEDeviceFinder", ActivityCompat.checkSelfPermission(
-            context,
-            Manifest.permission.BLUETOOTH_SCAN
-        ).toString())
-        if(ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.BLUETOOTH_SCAN
-            ) != PERMISSION_GRANTED
-        ) {
-            permissionFlag = true
-            Log.i("BLEDeviceFinder","Permission not Granted")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if(ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN)!=PackageManager.PERMISSION_GRANTED){
+                permissionFlag = false
+                Log.i("BLEDeviceFinder","Permission not Granted")
 
-            /*val requestPermissionLauncher =
-                registerForActivityResult(RequestPermission()){
+                /*val requestPermissionLauncher =
+                    registerForActivityResult(RequestPermission()){
 
-                }*/
-            // TODO: Consider calling ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+                    }*/
+                // TODO: Consider calling ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+            } else {
+                permissionFlag = true
+                Log.i("BLEDeviceFinder","Permission is Granted")
+            }
+        } else {
+            permissionFlag = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED
         }
-        else{
-            permissionFlag = true
-            Log.i("BLEDeviceFinder","Permission is Granted")
-        }
+        Log.i("BLEDeviceFinder", permissionFlag.toString())
     }
     // Device scan callback.
     private val leScanCallback: ScanCallback = object : ScanCallback() {
@@ -106,11 +129,11 @@ class bluetoothLEDeviceFinder (adapter: BluetoothAdapter, context: Context){
         return false
     }
 
-    fun AdapterAddress(): String?{
+    fun AdapterAddress(): String{
         if(permissionFlag){
             return btAdapterAddress.toString()
         }
-        return null
+        return "01:00:00:00:00:00"
     }
 }
 sealed class BluetoothResponse(){

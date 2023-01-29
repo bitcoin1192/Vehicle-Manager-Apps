@@ -13,69 +13,104 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class LoginRepository(context: Application, scope:CoroutineScope, ViewModelError: ViewModelError, macadress: String?) {
-    private var username = ""
-    private var password = ""
-    val scope = scope
-    private var _response: MutableLiveData<LoginRepoResponse> = MutableLiveData()
-    val response: LiveData<LoginRepoResponse> get() = _response
-    private val errorView = ViewModelError
-    private val loginService = APIEndpoint(context).loginService
+class LoginRepository(context: Application, scope:CoroutineScope, macadress: String?) {
+    private val loginService = APIEndpoint.getInstance(context).loginService
     private var macaddress: String = "01:00:00:00:00:00"
-
     init {
         macadress?.let {
             this.macaddress = it
         }
     }
 
-    fun doSignUp(){
-        val actionBody = LoginBody("signup",this.username,this.password,this.macaddress)
-        scope.launch(Dispatchers.IO) {
-            val result = loginService.loginEndpoint(actionBody)
-            connectionErrorHandler(result)?.let {
-                when(it) {
-                    is NetworkResponse.Success -> {
-                        doLogin()
-                    }
-                    is NetworkResponse.Error -> {
-                        //Send error to whoever listening
-                    }
-                }
+    suspend fun doSignUp(user: String,pass: String, simnumber:String): Pair<LoginRepoResponse?,ErrorType?>{
+        val actionBody = LoginBody("signup",user,pass, this.macaddress, simnumber)
+        return when(val result = loginService.loginEndpoint(actionBody)){
+            is NetworkResponse.Success->{
+                Pair(LoginRepoResponse.SignupSuccess("User is Signed Up"),null)
             }
+            is NetworkResponse.ServerError->{
+                Pair(null, result.body?.let {
+                    ErrorType.ShowableError("LoginRepository", it.errMsg) }
+                )
+            }
+            is NetworkResponse.NetworkError->{
+                Log.e("Retrofit-Networking", result.error.toString())
+                Pair(null, result.toString().let {
+                    ErrorType.LogableError("LoginRepository", it)
+                })
+            }
+            is NetworkResponse.UnknownError-> {
+                Log.e("LoginRepository",result.error.toString())
+                Pair(null,null)
+            }
+            /*else -> {
+                Pair(null, result.toString().let {
+                    ErrorType.ShowableError("LoginRepository", it)
+                }
+                )
+            }*/
         }
     }
 
-    fun doLogin(){
-        val actionBody = LoginBody("login",this.username,this.password, this.macaddress)
-        scope.launch(Dispatchers.IO){
-            val result = loginService.loginEndpoint(actionBody)
-            connectionErrorHandler(result)?.let {
-                when(it) {
-                    is NetworkResponse.Success -> {
-                        _response.postValue(LoginRepoResponse.LoginSuccess(it.body.msg))
-                    }
-                    is NetworkResponse.Error -> {
-                        //Send error to whoever listening
-                    }
+    suspend fun doLogin(user: String,pass: String): Pair<LoginRepoResponse?,ErrorType?>{
+        val actionBody = LoginBody("login",user,pass, this.macaddress,null)
+        return when(val result = loginService.loginEndpoint(actionBody)){
+            is NetworkResponse.Success->{
+                Pair(LoginRepoResponse.LoginSuccess("User is Logged in"),null)
+            }
+            is NetworkResponse.ServerError->{
+                Pair(null, result.body?.let {
+                    ErrorType.ShowableError("LoginRepository", it.errMsg) }
+                )
+            }
+            is NetworkResponse.NetworkError->{
+                Log.e("Retrofit-Networking", result.error.toString())
+                Pair(null, result.toString().let {
+                    ErrorType.ShowableError("LoginRepository", it)
+                })
+            }
+            is NetworkResponse.UnknownError-> {
+                Log.e("LoginRepository",result.error.toString())
+                Pair(null,null)
+            }
+            /*else -> {
+                Pair(null, result.toString().let {
+                    ErrorType.ShowableError("LoginRepository", it)
                 }
+                )
+            }*/
+        }
+        /*connectionErrorHandler(result)?.first.also {
+            return when(it) {
+                is NetworkResponse.Success -> {
+
+                    //_response.postValue(LoginRepoResponse.LoginSuccess(it.body.msg))
+                }
+                is NetworkResponse.ServerError -> pass.toString()
+                is NetworkResponse.NetworkError -> TODO()
+                is NetworkResponse.UnknownError -> TODO()
+                null -> TODO()
             }
         }
+        connectionErrorHandler(result)?.second.also {
+            return Pair(null,it)
+        }*/
     }
 
-    private fun connectionErrorHandler(result:NetworkResponse<LoginResponse, ResponseError>): NetworkResponse<LoginResponse, ResponseError>?{
+    private fun connectionErrorHandler(result:NetworkResponse<LoginResponse, ResponseError>): Pair<NetworkResponse<LoginResponse, ResponseError>?,ErrorType?>?{
         var forwardResponse = true
         when (result) {
             is NetworkResponse.ServerError -> {
                 result.body?.let {
-                    errorView.setError(ErrorType.ShowableError("Server Error: ".plus(result.code.toString()),it.errMsg))
+                    Log.e("Retrofit-Networking", it.errMsg)
+                    return Pair(null,ErrorType.ShowableError("Server Error: ".plus(result.code.toString()),it.errMsg))
                 }
                 forwardResponse = false
             }
             is NetworkResponse.NetworkError -> {
-                result.body?.let {
-                    errorView.setError(ErrorType.LogableError("Network Error: ",it.errMsg))
-                }
+                /*result.body?.let {
+                    _error.value = ErrorType.LogableError("Network Error: ",it.errMsg)
+                }*/
                 Log.e("Retrofit-Networking", result.error.toString())
                 forwardResponse = false
             }
@@ -84,19 +119,13 @@ class LoginRepository(context: Application, scope:CoroutineScope, ViewModelError
                 forwardResponse = false
             }
         }
-        if(forwardResponse){
-            return result
-        }
-        return null
-    }
-
-    fun setUser(user: String, pass: String){
-        this.username = user
-        this.password = pass
-        Log.i("LoginRepos","user pass is ${this.password}")
+    return null
     }
 }
+
 sealed class LoginRepoResponse{
     class LoginSuccess(val result: String): LoginRepoResponse()
     class SignupSuccess(val result: String): LoginRepoResponse()
+    class LoginFailed(val result: String): LoginRepoResponse()
+    class SignupFailed(val result: String): LoginRepoResponse()
 }

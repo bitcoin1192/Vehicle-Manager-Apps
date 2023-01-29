@@ -14,7 +14,6 @@ import com.sisalma.vehicleandusermanagement.helper.ViewModelDialog
 import com.sisalma.vehicleandusermanagement.helper.ViewModelLogin
 
 class DaftarFragment : Fragment() {
-    private lateinit var binding: FragmentDaftarBinding
     private val ViewModelLogin: ViewModelLogin by activityViewModels()
 
     override fun onCreateView(
@@ -22,19 +21,16 @@ class DaftarFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = FragmentDaftarBinding.inflate(inflater, container, false)
-
         view.btnDaftar.setOnClickListener {
-            ViewModelLogin.setCurrentUser(view.editTextTextPersonName.text.toString(),
-                view.editTextTextPassword.text.toString())
             //daftarAction will automatically try to call login in loginrepo, just a reminder
-            ViewModelLogin.daftarAction()
+            ViewModelLogin.daftarAction(view.editTextTextPersonName.text.toString(),view.editTextTextPassword.text.toString(),view.editTextTextSIM.text.toString())
         }
 
-        ViewModelLogin.status.observe(this.viewLifecycleOwner){ response ->
+        ViewModelLogin.status.observe(viewLifecycleOwner){ response ->
             //Hear for success user login -> findNavController().navigate(R.id.action_daftarFragment_to_vehicleFragment)
             response?.let {
-                when(response){
-                    is LoginResponseState.successLogin -> {
+                when(it){
+                    is LoginResponseState.successSignup -> {
                         ViewModelLogin.clearViewModel()
                         findNavController().navigate(R.id.action_daftarFragment_to_vehicleFragment)
                     }

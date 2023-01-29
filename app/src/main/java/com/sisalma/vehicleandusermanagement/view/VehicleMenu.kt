@@ -40,10 +40,10 @@ class fragmentVehicleMenu : Fragment() {
             ViewModelDialog.showInputForm("Please enter target username")
         }
 
-        ViewModelDialog.liveDataInputResponse.observe(this.viewLifecycleOwner){
+        ViewModelDialog.liveDataInputResponse.observe(viewLifecycleOwner){
             it?.let { userInput ->
                 ViewModelUser.searchUserUID(userInput)
-                ViewModelUser.searchResult.observe(this.viewLifecycleOwner) { searchResult ->
+                ViewModelUser.searchResult.observe(viewLifecycleOwner) { searchResult ->
                     searchResult?.let { result ->
                         //Hacky solution, check hashcode to differentiate trigger twice bug. Still no root cause
                         if(result.hashCode() != temporary.hashCode()){

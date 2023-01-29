@@ -12,12 +12,14 @@ import com.sisalma.vehicleandusermanagement.helper.ViewModelDialog
 import com.sisalma.vehicleandusermanagement.helper.ViewModelUser
 import com.sisalma.vehicleandusermanagement.helper.ViewModelVehicle
 import com.sisalma.vehicleandusermanagement.model.API.MemberData
+import com.sisalma.vehicleandusermanagement.model.SearchResult
 
 class VehicleEdit: Fragment() {
     private var contentIsReady = false
     private val ViewModelVehicle: ViewModelVehicle by activityViewModels()
     private val ViewModelUser: ViewModelUser by activityViewModels()
     private val ViewModelDialog: ViewModelDialog by activityViewModels()
+    private var temporary = SearchResult(0,"")
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -65,10 +67,26 @@ class VehicleEdit: Fragment() {
             }
         }
 
-        ViewModelDialog.liveDataInputResponse.observe(this.viewLifecycleOwner){
-            it?.let {
-                ViewModelVehicle.updateMemberData(memberDataWrapper.add(MemberData("",it.toInt(),"")))
-                ViewModelVehicle.addMember(ViewModelVehicle.formMemberList)
+        ViewModelDialog.liveDataInputResponse.observe(this.viewLifecycleOwner){ queryName ->
+            queryName?.let { query->
+                ViewModelUser.searchUserUID(query)
+                ViewModelUser.searchResult.observe(this.viewLifecycleOwner){ SResult ->
+                    SResult?.let {
+                        if(it.hashCode() != temporary.hashCode()) {
+                            ViewModelVehicle.updateMemberData(
+                                memberDataWrapper.add(
+                                    MemberData(
+                                        "",
+                                        it.UID,
+                                        ""
+                                    )
+                                )
+                            )
+                            temporary = SResult
+                            ViewModelVehicle.addMember(ViewModelVehicle.formMemberList)
+                        }
+                    }
+                }
             }
         }
         return view.root

@@ -22,17 +22,12 @@ class loginFragment : Fragment() {
         // Inflate the layout for this fragment
         val view = FragmentLoginBinding.inflate(inflater,container,false)
         view.btnLogin.setOnClickListener {
-            ViewModelLogin.setCurrentUser(view.editTextTextPersonName.text.toString(),
+            ViewModelLogin.loginAction(view.editTextTextPersonName.text.toString(),
                 view.editTextTextPassword.text.toString())
-            ViewModelLogin.loginAction()
         }
 
         view.btnDaftar.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_daftarFragment)
-        }
-
-        ViewModelLogin.response.observe(viewLifecycleOwner) { response ->
-            view.textView.text = response
         }
 
         ViewModelLogin.status.observe(viewLifecycleOwner) {
@@ -50,5 +45,10 @@ class loginFragment : Fragment() {
         }
 
         return view.root
+    }
+
+    override fun onPause() {
+        ViewModelLogin.status.removeObservers(viewLifecycleOwner)
+        super.onPause()
     }
 }
