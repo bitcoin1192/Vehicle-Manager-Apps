@@ -3,15 +3,10 @@ package com.sisalma.vehicleandusermanagement
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
-import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.AttributeSet
 import android.util.Log
-import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -21,7 +16,7 @@ import com.sisalma.vehicleandusermanagement.databinding.ActivityLauncherBinding
 import com.sisalma.vehicleandusermanagement.helper.*
 import com.sisalma.vehicleandusermanagement.model.API.UserRepository
 import com.sisalma.vehicleandusermanagement.model.API.VehicleRepository
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.bluetoothLEService
+import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroLEService
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,7 +32,7 @@ class launcher_activity : AppCompatActivity() {
     val ViewModelDialog: ViewModelDialog by viewModels()
     var btMan: BluetoothManager? = null
     var bleFinder: bluetoothLEDeviceFinder? = null
-    var bleService: bluetoothLEService? = null
+    var bleService: pizeroLEService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,7 +55,7 @@ class launcher_activity : AppCompatActivity() {
             Log.i("btSetup","btManager and btAdapter is set on Activity")
             showPermissionAsker()
             bleFinder = bluetoothLEDeviceFinder.getInstance(adapter,this.application)
-            bleService = bluetoothLEService()
+            //bleService = bluetoothLEService()
             this.lifecycleScope.launch(Dispatchers.IO){
                 bleFinder!!.scanLeDevice()
             }
@@ -153,7 +148,7 @@ class launcher_activity : AppCompatActivity() {
             //BT Should be granted already, but needed fine location permission to scan
             val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             requestBluetooth.launch(enableBtIntent)
-            requestMultiplePermissions.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)).also {
+            requestMultiplePermissions.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH)).also {
 
             }
         }

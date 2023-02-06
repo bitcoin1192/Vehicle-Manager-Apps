@@ -65,4 +65,5 @@
         app:layout_constraintEnd_toEndOf="@+id/imgTransfer"
         app:layout_constraintStart_toStartOf="@+id/imgTransfer"
         app:layout_constraintTop_toBottomOf="@+id/imgTransfer" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

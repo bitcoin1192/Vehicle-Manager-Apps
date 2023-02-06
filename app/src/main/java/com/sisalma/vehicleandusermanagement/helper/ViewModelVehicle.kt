@@ -9,7 +9,7 @@ import com.sisalma.vehicleandusermanagement.model.API.ListMemberData
 import com.sisalma.vehicleandusermanagement.model.API.MemberData
 import com.sisalma.vehicleandusermanagement.model.API.VehicleRepository
 import com.sisalma.vehicleandusermanagement.model.API.opResult
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.bluetoothLEService
+import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroLEService
 import com.sisalma.vehicleandusermanagement.model.BluetoothResponse
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import com.sisalma.vehicleandusermanagement.view.memberDataWrapper
@@ -19,8 +19,8 @@ import kotlinx.coroutines.launch
 class ViewModelVehicle(application: Application): AndroidViewModel(application) {
     private val btMan = getApplication<Application>().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     lateinit var bleFinder : bluetoothLEDeviceFinder
-    lateinit var bleService : bluetoothLEService
-    lateinit var vehicleRepository: VehicleRepository
+    lateinit var bleService : pizeroLEService
+    var vehicleRepository: VehicleRepository
 
     var fragmentIsShowed = false
     private var selectedVID = 0
@@ -44,16 +44,31 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
     private val _nearbyVehicleList: MutableLiveData<ListMemberData> = MutableLiveData()
     val nearbyVehicleList: LiveData<ListMemberData> get() = _nearbyVehicleList
 
+    private val _currentVehicleLockStatus: MutableLiveData<Boolean> = MutableLiveData(false)
+    val currentVehicleLockStats  get() = _currentVehicleLockStatus
+    /*
+    private var bluetoothService : bluetoothLEService? = null
+    private val serviceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(
+            componentName: ComponentName,
+            service: IBinder
+        ) {
+            bluetoothService = (service as bluetoothLEService.LocalBinder).getService()
+            bluetoothService?.let { bluetooth ->
+                // call functions on service to check connection and connect to devices
+            }
+        }
+    }*/
     init{
-        vehicleRepository = VehicleRepository(getApplication(),null,null)
+        vehicleRepository = VehicleRepository(getApplication(),null)
         btMan.adapter?.let { adapter ->
             Log.i("ViewModelVehicle","Bluetooth Adapter is found !")
             bleFinder = bluetoothLEDeviceFinder.getInstance(adapter,getApplication())
-            bleService = bluetoothLEService()
+            bleService = pizeroLEService(adapter,application)
             if (bleFinder.permissionFlag == true){
                 viewModelScope.launch(Dispatchers.IO){
                     bleFinder.scanLeDevice()
-                    vehicleRepository = VehicleRepository(getApplication(),bleService,bleFinder)
+                    vehicleRepository = VehicleRepository(getApplication(),bleFinder)
                 }
             }else{
                 _bluetoothRequest.value = vehicleOperationRequest.bluetoothPermisionRequest()
@@ -66,42 +81,13 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
             if (bleFinder.permissionFlag){
                 viewModelScope.launch(Dispatchers.IO){
                     bleFinder.scanLeDevice()
-                    vehicleRepository = VehicleRepository(getApplication(),bleService,bleFinder)
+                    vehicleRepository = VehicleRepository(getApplication(),bleFinder)
                 }
             }else{
                 Log.i("BLEFinder", "Permission Error")
             }
         }
     }
-    fun operationStatus(opRes: opResult){
-        /*when(opRes){
-            is opResult.addSuccess->{
-                getMemberData()
-            }
-            is opResult.removeSuccess->{
-                getMemberData()
-            }
-            is opResult.transferSuccess->{
-                getMemberData()
-            }
-            is opResult.btSuccesful->{
-                showError("Bluetooth operation succesful")
-            }
-            is opResult.addError->{
-                showError("Adding member fail, please try again")
-            }
-            is opResult.removeError->{
-                showError("Removing member fail, Please try again")
-            }
-            is opResult.transferError->{
-                showError("Transfering vehicle fail, Please try again")
-            }
-            is opResult.btFail->{
-                showError("Fail to do bluetooth operation")
-            }
-        }*/
-    }
-
     private fun showError(errorType: ErrorType){
         if(fragmentIsShowed){
             _error.value = errorType
@@ -160,14 +146,14 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun setMemberData(latestList :ListMemberData){
+    /*fun setMemberData(latestList :ListMemberData){
         latestMemberList.clear()
         latestList.VehicleMember.forEach(){
             latestMemberList[it.UID] = it
         }
         formMemberList.clear()
         showMemberData()
-    }
+    }*/
 
     private fun showMemberData(){
         val list = arrayListOf<MemberData>()
@@ -176,14 +162,14 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
         }
         _vehicleMemberData.value = ListMemberData(list)
     }
-
+/*
     fun showViewableMemberData(){
         showMemberData()
     }
     fun clearViewableMemberData(){
         _vehicleMemberData.value = null
     }
-
+*/
     //Below this line, all function require bluetooth le to connect to Pi-Zero
     fun setVehicleMember(newList: ListMemberData){
         //TODO("Function to set vehicle member by diffing between new list and server list")
@@ -192,12 +178,19 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun setLockStatus(lock: Boolean){
+    fun setDeviceLockStatus(lock: Boolean){
         //TODO("Function to set lock status of vehicle in order to control vehicle electric system via bluetooth")
-        if (bluetoothConnectionStatus == true){
-            _bluetoothRequest.value = vehicleOperationRequest.setLockStatus(lock)
+        viewModelScope.launch(Dispatchers.IO) {
+            _currentVehicleLockStatus.value?.let {
+                if (it == true){
+                    vehicleRepository.vehicleSetLock(it,selectedVID)
+                    _currentVehicleLockStatus.postValue(false)
+                }else{
+                    vehicleRepository.vehicleSetLock(it,selectedVID)
+                    _currentVehicleLockStatus.postValue(true)
+                }
+            }
         }
-
     }
 
     fun setVID(VID: Int){
@@ -211,6 +204,7 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
     fun getNearbyDevice(){
         viewModelScope.launch(Dispatchers.IO) {
             val result = vehicleRepository.findNearbyDevice()
+            val service = pizeroLEService(btMan.adapter, getApplication())
             when(result){
                 is BluetoothResponse.deviceScanResult->{
                     val list: MutableList<MemberData> = arrayListOf()

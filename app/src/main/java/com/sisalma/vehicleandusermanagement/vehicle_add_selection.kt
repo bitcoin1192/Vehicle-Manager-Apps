@@ -30,8 +30,6 @@ class vehicle_add_selection : Fragment() {
             }
 
         }
-
-
         return view.root
     }
 }

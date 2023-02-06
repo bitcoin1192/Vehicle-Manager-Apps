@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.sisalma.vehicleandusermanagement.databinding.FragmentVehicleEditBinding
@@ -27,6 +28,13 @@ class fragmentVehicleMenu : Fragment() {
         // Inflate the layout for this fragment
         val view = FragmentVehicleMenuBinding.inflate(inflater,container,false)
         // TODO(Fill in each image button with findNavController().navigate(action) to navigate to next destination fragment)
+        ViewModelVehicle.currentVehicleLockStats.observe(viewLifecycleOwner){
+            if (it){
+                view.imgKunci.setImageResource(R.drawable.baseline_lock_open_24)
+            }else{
+                view.imgKunci.setImageResource(R.drawable.ic_baseline_lock_120)
+            }
+        }
         view.imgEditUser.setOnClickListener{
             //ViewModelVehicle.showViewableMemberData()
             val action = fragmentVehicleMenuDirections.actionVehicleMenuFragmentToVehicleEditFragment()
@@ -34,7 +42,8 @@ class fragmentVehicleMenu : Fragment() {
         }
         view.imgKunci.setOnClickListener{
             val action = fragmentVehicleMenuDirections.actionVehicleMenuFragmentToVehicleEditFragment()
-            findNavController().navigate(action)
+            ViewModelVehicle.setDeviceLockStatus(true)
+            //findNavController().navigate(action)
         }
         view.imgTransfer.setOnClickListener{
             ViewModelDialog.showInputForm("Please enter target username")

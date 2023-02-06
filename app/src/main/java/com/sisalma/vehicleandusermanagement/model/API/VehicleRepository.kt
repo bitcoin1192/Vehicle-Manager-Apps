@@ -1,32 +1,21 @@
 package com.sisalma.vehicleandusermanagement.model.API
 
+import android.annotation.SuppressLint
 import android.app.Application
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.util.Log
-import androidx.annotation.RestrictTo.Scope
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.lifecycleScope
 import com.google.gson.Gson
 import com.haroldadmin.cnradapter.NetworkResponse
 import com.sisalma.vehicleandusermanagement.helper.ErrorType
-import com.sisalma.vehicleandusermanagement.helper.ViewModelError
 import com.sisalma.vehicleandusermanagement.helper.vehicleOperationRequest
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.bluetoothLEService
+import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroDevice
+import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroLEService
 import com.sisalma.vehicleandusermanagement.model.BluetoothResponse
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
-class VehicleRepository(context: Application, BLEService: bluetoothLEService?, BLEFinder: bluetoothLEDeviceFinder?) {
-    private val BLEScanner: bluetoothLEDeviceFinder?  = BLEFinder
+class VehicleRepository(val context: Application, val BLEFinder: bluetoothLEDeviceFinder?) {
+    private var BLEService: pizeroLEService? = null
     private val endPointService = APIEndpoint.getInstance(context).vehicleService
-    private var _responseMember: MutableLiveData<ListMemberData> = MutableLiveData()
-    val responseMember: LiveData<ListMemberData> get() = _responseMember
-    private var _responseStatus: MutableLiveData<opResult> = MutableLiveData()
-    val responseStatus: LiveData<opResult> get() = _responseStatus
-
     fun requestParser(inputRequest: vehicleOperationRequest){
     }
     suspend fun addFriend(VID: Int,UIDTarget: ListMemberData):Pair<opResult?,ErrorType?>{
@@ -56,18 +45,55 @@ class VehicleRepository(context: Application, BLEService: bluetoothLEService?, B
         return runGetVehicleMember(GroupBody("member", arrayListOf(ChangeMemberForm(0,VID))))
     }
 
-    suspend fun findFromScannedList(deviceName: String){
-        BLEScanner?.scanLeDevice()
-        BLEScanner?.findLEDevice(deviceName)
+    suspend fun findFromScannedList(deviceName: String):BluetoothDevice?{
+        BLEFinder?.scanLeDevice()
+        BLEFinder?.findLEDevice(deviceName).let {
+            return it
+        }
     }
 
+    @SuppressLint("MissingPermission")
     suspend fun findNearbyDevice():BluetoothResponse?{
-        BLEScanner?.scanLeDevice()?.let { response ->
-            bluetoothErrorHandler(response).first?.let {
-                return it
+        val ourDevice: MutableList<BluetoothDevice> = arrayListOf()
+        BLEFinder?.scanLeDevice()?.let { response ->
+            bluetoothStatusHandler(response).first?.let { bluetoothResponse ->
+                when(bluetoothResponse){
+                    is BluetoothResponse.deviceScanResult ->{
+                        bluetoothResponse.devices.forEach { bluetoothDevice ->
+                            BLEService = pizeroLEService(BLEFinder.btAdapter,context)
+                            BLEService?.startConnnection(bluetoothDevice)
+                            BLEService?.let {
+                                it.isDeviceCorrect().let {
+                                    if (it != null) {
+                                        ourDevice.add(it)
+                                    }
+                                }
+                            }
+                        }
+                        //Read one
+                        ourDevice.forEach{device ->
+                            BLEService?.let {
+                                it.startConnnection(device)
+                                pizeroDevice(it).writeLockStatus(true)
+                                //it.closeConnection()
+                            }
+                        }
+                        BLEService?.closeConnection()
+                    }
+                }
+                return BluetoothResponse.deviceScanResult(ourDevice)
             }
         }
         return null
+    }
+    suspend fun vehicleSetLock(setStatus: Boolean, VID: Int){
+        var action: GroupBody? = null
+        if (setStatus){
+            action = GroupBody("enable", arrayListOf(ChangeMemberForm(0,VID)))
+        }else{
+            action = GroupBody("disable", arrayListOf(ChangeMemberForm(0,VID)))
+        }
+        requestSetLockVehicle(action)
     }
 
     private suspend fun runAddFriend(actionBody: GroupBody):Pair<opResult?,ErrorType?>{
@@ -107,7 +133,30 @@ class VehicleRepository(context: Application, BLEService: bluetoothLEService?, B
             return Pair(null, OKResponse.second)
         }
     }
+    private suspend fun requestSetLockVehicle(actionBody: GroupBody):Pair<opResult?,ErrorType?>{
+        val result = endPointService.lockRequestVehicle(actionBody)
+        val gson = Gson()
+        connectionStatusHandler(result).let { OKResponse ->
+            OKResponse.first?.msg?.let { jsonObject ->
+                val results = gson.fromJson(jsonObject, VehicleLockResponse::class.java)
+                findFromScannedList(results.macaddress)?.let {
+                    BLEService?.startConnnection(it)
+                    if (results.VehicleEnable){
+                        //Write to Bluetooth device enable vehicle
+                        Log.i("VehicleRepository","Permission to enable vehicle is granted")
+                    }else{
+                        //Write to Bluetooth device disable vehicle
+                        Log.i("VehicleRepository","Permission to disable vehicle is granted")
+                    }
+                    BLEService?.let { it1 -> pizeroDevice(it1).writeLockStatus(results.VehicleEnable) }
+                }
 
+                //device?.setLockStatus(result.VehicleEnable)
+                return Pair(opResult.requestLockSuccess(),null)
+            }
+            return Pair(null, OKResponse.second)
+        }
+    }
     private fun connectionStatusHandler(result:NetworkResponse<ResponseSuccess, ResponseError>): Pair<ResponseSuccess?, ErrorType?>{
         when (result) {
             is NetworkResponse.Success->{
@@ -127,7 +176,7 @@ class VehicleRepository(context: Application, BLEService: bluetoothLEService?, B
         }
         return Pair(null,null)
     }
-    private fun bluetoothErrorHandler(result:BluetoothResponse): Pair<BluetoothResponse?,ErrorType?>{
+    private fun bluetoothStatusHandler(result:BluetoothResponse): Pair<BluetoothResponse?,ErrorType?>{
         when(result){
             is BluetoothResponse.connectionFailed->{
                 return Pair(null,ErrorType.ShowableError("VehicleRepository","Can't estabilish connection to selected macaddress"))
@@ -136,6 +185,7 @@ class VehicleRepository(context: Application, BLEService: bluetoothLEService?, B
                 return Pair(null,ErrorType.LogableError("VehicleRepository","GATT Server doesn't not respond, might be signal to low"))
             }
             is BluetoothResponse.deviceScanResult->{
+
                 return Pair(result,null)
             }
         }
@@ -150,6 +200,7 @@ sealed class opResult{
     class removeError(val errorMsg: String): opResult()
     class transferSuccess: opResult()
     class transferError(val errorMsg: String): opResult()
+    class requestLockSuccess(): opResult()
     class bluetoothSearchSuccess(): opResult()
     class bluetoothSearchFailed(): opResult()
     class btSuccesful(val errorMsg: String): opResult()
@@ -157,4 +208,5 @@ sealed class opResult{
 }
 
 data class ListMemberData(val VehicleMember:List<MemberData>)
+data class VehicleLockResponse(val VehicleEnable:Boolean, val macaddress: String)
 data class MemberData(val Username:String, val UID: Int, val AccKey: String)

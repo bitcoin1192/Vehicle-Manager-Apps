@@ -61,6 +61,9 @@ interface VehicleBackend {
     suspend fun removeFriend(@Body body: GroupBody): NetworkResponse<ResponseSuccess, ResponseError>
 
     @POST("vehicleOps")
+    suspend fun lockRequestVehicle(@Body body: GroupBody): NetworkResponse<ResponseSuccess, ResponseError>
+
+    @POST("vehicleOps")
     suspend fun getVehicleSummary(@Body body: GroupBody): NetworkResponse<ResponseSuccess, ResponseError>
 }
 class CustomCookies(val cache: CookieCache,val persistence: CookiePersistor): PersistentCookieJar(cache,persistence){
@@ -85,8 +88,8 @@ class APIEndpoint private constructor(){
         }
     }
 
-    //val BASE_URL = "https://dev-api.sisalma.com/"
-    val BASE_URL = "http://192.168.30.250:8080/"
+    val BASE_URL = "https://dev-api.sisalma.com/"
+    //val BASE_URL = "http://192.168.30.250:8080/"
     //val BASE_URL = "http://192.168.137.1:8080/"
     //val BASE_URL = "http://10.21.159.239:5000/"
     lateinit var cookieJar: CustomCookies
