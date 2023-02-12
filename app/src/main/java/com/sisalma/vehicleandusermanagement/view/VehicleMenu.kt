@@ -25,8 +25,14 @@ class fragmentVehicleMenu : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        arguments?.getInt("VID",0)?.let {
+            ViewModelVehicle.setVID(it)
+        }
         // Inflate the layout for this fragment
         val view = FragmentVehicleMenuBinding.inflate(inflater,container,false)
+        ViewModelVehicle.dataIsLoaded.observe(viewLifecycleOwner){
+            ViewModelVehicle.connectDevice()
+        }
         // TODO(Fill in each image button with findNavController().navigate(action) to navigate to next destination fragment)
         ViewModelVehicle.currentVehicleLockStats.observe(viewLifecycleOwner){
             if (it){
@@ -35,20 +41,22 @@ class fragmentVehicleMenu : Fragment() {
                 view.imgKunci.setImageResource(R.drawable.ic_baseline_lock_120)
             }
         }
+
         view.imgEditUser.setOnClickListener{
-            //ViewModelVehicle.showViewableMemberData()
             val action = fragmentVehicleMenuDirections.actionVehicleMenuFragmentToVehicleEditFragment()
             findNavController().navigate(action)
         }
         view.imgKunci.setOnClickListener{
-            val action = fragmentVehicleMenuDirections.actionVehicleMenuFragmentToVehicleEditFragment()
             ViewModelVehicle.setDeviceLockStatus(true)
-            //findNavController().navigate(action)
         }
         view.imgTransfer.setOnClickListener{
             ViewModelDialog.showInputForm("Please enter target username")
         }
-
+        val new = FormDialogFragment()
+        activity?.supportFragmentManager?.let {
+            new.setMessage("Hello")
+            new.show(it,"Bgsc")
+        }
         ViewModelDialog.liveDataInputResponse.observe(viewLifecycleOwner){
             it?.let { userInput ->
                 ViewModelUser.searchUserUID(userInput)

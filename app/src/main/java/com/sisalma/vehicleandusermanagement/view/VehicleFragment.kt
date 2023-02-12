@@ -34,9 +34,6 @@ class VehicleFragment : Fragment() {
             onOptionsItemSelected(it)
         })
         VehicleListAdapter = VehicleListFragmentHolder(this, 2)
-        VehicleListAdapter.SignalNextPage.observe(this.viewLifecycleOwner){
-            //accessVehicleMenu(it)
-        }
 
         childFragmentManager.setFragmentResultListener("fragmentFinish",this.viewLifecycleOwner){key, bundle->
             val value = bundle.getInt("fragmentResult",0)
@@ -74,7 +71,6 @@ class VehicleFragment : Fragment() {
         findNavController().navigate(action)
     }
     private fun accessVehicleMenu(VIDValue: Int){
-        ViewModelVehicle.setVID(VIDValue)
         val action = VehicleFragmentDirections.actionVehicleFragmentToVehicleMenuFragment(VIDValue)
         findNavController().navigate(action)
     }

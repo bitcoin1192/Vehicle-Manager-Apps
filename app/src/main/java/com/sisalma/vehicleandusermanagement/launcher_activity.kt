@@ -39,7 +39,7 @@ class launcher_activity : AppCompatActivity() {
         var binding = ActivityLauncherBinding.inflate(layoutInflater)
         //btSetup()
         navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        UserRepository = UserRepository(this.application,this,ViewModelError)
+        UserRepository = UserRepository(this.application)
         bindViewModelRequest()
         bindViewModelRepository()
         bindViewModelStatus()
@@ -57,7 +57,7 @@ class launcher_activity : AppCompatActivity() {
             bleFinder = bluetoothLEDeviceFinder.getInstance(adapter,this.application)
             //bleService = bluetoothLEService()
             this.lifecycleScope.launch(Dispatchers.IO){
-                bleFinder!!.scanLeDevice()
+                bleFinder!!.scanLeDevice("")
             }
             return
         }
@@ -65,15 +65,6 @@ class launcher_activity : AppCompatActivity() {
     }
 
     private fun bindViewModelRequest(){
-        ViewModelUser.request.observe(this){ query ->
-            UserRepository.requestParser(query)
-        }
-        ViewModelLogin.status.observe(this){
-            UserRepository.getKnownVehicle()
-        }
-        ViewModelVehicle.requestMemberData.observe(this){ VID ->
-            VehicleRepository.requestParser(VID)
-        }
         ViewModelError.showableErrorListener.observe(this){
             when(it) {
                 is ErrorType.ShowableError-> {
@@ -97,9 +88,6 @@ class launcher_activity : AppCompatActivity() {
     }
 
     fun bindViewModelRepository() {
-        UserRepository.response.observe(this){
-            ViewModelUser.setResponse(it)
-        }
     }
 
     fun bindViewModelStatus(){
@@ -109,6 +97,9 @@ class launcher_activity : AppCompatActivity() {
                     ViewModelError.setError(ErrorType.LogableError("ViewModelLogin", it.errorMsg))
                 }
             }
+        }
+        ViewModelUser.error.observe(this){
+            ViewModelError.setError(it)
         }
         ViewModelVehicle.error.observe(this){
             ViewModelError.setError(it)

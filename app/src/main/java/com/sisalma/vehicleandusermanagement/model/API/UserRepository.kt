@@ -17,114 +17,130 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 data class UserKnownVehicle(val BorrowedVehicle: List<VehicleInformation>, val OwnedVehicle:List<VehicleInformation>)
+data class VehicleAddMessage(val response: String)
 data class UserSearch(val SearchUserResult: List<SearchResult>)
 
-class UserRepository(context: Application,activity: AppCompatActivity, ViewModelError: ViewModelError) {
-    private val activity = activity
+class UserRepository(val context: Application) {
     private val endPointService = APIEndpoint.getInstance(context).userService
     private val conteks = context
-    private val errorView = ViewModelError
     private var _response: MutableLiveData<UserRepoResponse> = MutableLiveData()
     val response: LiveData<UserRepoResponse> get() = _response
 
     fun requestParser(input: userOperationRequest){
         when(input){
-            is userOperationRequest.searchUserUID -> searchUserUID(input.UserQuery)
+            /*is userOperationRequest.searchUserUID -> searchUserUID(input.UserQuery)
             is userOperationRequest.getVehicleList -> getKnownVehicle()
+            is userOperationRequest.addVehicle -> addVehicle(input.insert)*/
         }
     }
-    fun editUserData(newPassword: String){
-        runEditUserData(UserBody("edit", arrayListOf(UserData(newPassword,""))))
+    suspend fun editUserData(newPassword: String){
+        runEditUserData(UserBody("edit", arrayListOf(UserData(newPassword,"","",""))))
     }
-    fun searchUserUID(query: String){
-        searchUID(UserBody("searchUser", arrayListOf(UserData("",query))))
-    }
-
-    fun getKnownVehicle(){
-        runGetVehicle(IntentOnly("getKnownVehicle"))
+    suspend fun searchUserUID(query: String):Pair<UserRepoResponse?,ErrorType?>{
+        return searchUID(UserBody("searchUser", arrayListOf(UserData("",query,"",""))))
     }
 
-    private fun runEditUserData(actionBody: UserBody){
-        activity.lifecycleScope.launch(Dispatchers.IO){
-            val gson = Gson()
-            val result = endPointService.editUserData(actionBody)
-            connectionErrorHandler(result)?.let {
-                when(it) {
-                    is NetworkResponse.Success -> {
-                        val responseRead = gson.fromJson(it.body.msg,UserKnownVehicle::class.java)
-                        _response.postValue(UserRepoResponse.editUserSuccess(responseRead))
-                    }
-                    is NetworkResponse.Error -> {
-                        //Send error to whoever listening
-                    }
+    suspend fun getKnownVehicle():Pair<UserRepoResponse?,ErrorType?>{
+        return runGetVehicle(IntentOnly("getKnownVehicle"))
+    }
+
+    suspend fun addVehicle(vehicle: VehicleData):Pair<UserRepoResponse?,ErrorType?>{
+        val gg = UserData("","",vehicle.BTMacAddress,vehicle.name)
+        return runAddVehicle(UserBody("addVehicle", arrayListOf(gg)))
+    }
+
+    private suspend fun runAddVehicle(vehicle: UserBody):Pair<UserRepoResponse?,ErrorType?>{
+        val gson = Gson()
+        val result = endPointService.addVehicle(vehicle)
+        connectionErrorHandler(result).let {
+            it.first?.let {
+                gson.fromJson(it.msg,VehicleAddMessage::class.java).let {
+                    return Pair(UserRepoResponse.vehicleAddSuccess(true),null)
                 }
             }
+            it.second?.let {
+                return Pair(null, it)
+            }
         }
+        return Pair(null,null)
+    }
+    private suspend fun runEditUserData(actionBody: UserBody):Pair<UserRepoResponse?,ErrorType?>{
+        val gson = Gson()
+        val result = endPointService.editUserData(actionBody)
+        connectionErrorHandler(result).let {
+            it.first?.let {
+                gson.fromJson(it.msg,UserKnownVehicle::class.java).let {
+                    return Pair(UserRepoResponse.editUserSuccess(it),null)
+                }
+            }
+            it.second?.let {
+                return Pair(null,it)
+            }
+        }
+        return Pair(null,null)
     }
 
-    private fun runGetVehicle(actionBody: IntentOnly){
-        activity.lifecycleScope.launch(Dispatchers.IO){
-            val result = endPointService.getKnownVehicle(actionBody)
-            val gson = Gson()
-            connectionErrorHandler(result)?.let {
+    private suspend fun runGetVehicle(actionBody: IntentOnly):Pair<UserRepoResponse?,ErrorType?>{
+        val result = endPointService.getKnownVehicle(actionBody)
+        val gson = Gson()
+        connectionErrorHandler(result).let {
+            it.first?.let {
+                gson.fromJson(it.msg, UserKnownVehicle::class.java).let {
+                    it?.let {
+                        Log.i("Success", it.toString())
+                    }
+                    return Pair(UserRepoResponse.vehicleFetchSuccess(it), null)
+                }
+            }
+            it.second?.let {
+                return Pair(null,it)
+            }
+        }
+        return Pair(null,null)
+    }
+
+    private suspend fun searchUID(query: UserBody):Pair<UserRepoResponse?,ErrorType?>{
+        val result = endPointService.searchUserUID(query)
+        val gson = Gson()
+        connectionErrorHandler(result).let {
+            it.first.let {
                 when(it){
-                    is NetworkResponse.Success -> {
-                        val responseRead = gson.fromJson(it.body.msg,UserKnownVehicle::class.java)
-                        responseRead?.let {
-                            Log.i("Success", responseRead.toString())
-                        }
-                        _response.postValue(UserRepoResponse.vehicleFetchSuccess(responseRead))
-                    }
-                }
-            }
-        }
-    }
-
-    private fun searchUID(query: UserBody){
-        activity.lifecycleScope.launch(Dispatchers.IO){
-            val result = endPointService.searchUserUID(query)
-            val gson = Gson()
-            connectionErrorHandler(result)?.let {
-                when(it){
-                    is NetworkResponse.Success -> {
-                        val responseRead = gson.fromJson(it.body.msg,UserSearch::class.java)
-                        Log.i("Test", responseRead.toString())
-                        if(responseRead.SearchUserResult.size == 1) {
-                            _response.postValue(UserRepoResponse.searchSuccess(responseRead))
-                        }else{
-                            errorView.setError(ErrorType.ShowableError("Search User: ".format(), "Please type complete username !"))
+                    is ResponseSuccess -> {
+                        gson.fromJson(it.msg,UserSearch::class.java).let {
+                            Log.i("Test", it.toString())
+                            if(it.SearchUserResult.size == 1) {
+                                return Pair(UserRepoResponse.searchSuccess(it),null)
+                            }else{
+                                //return Pair(null,ErrorType.ShowableError("Search User: ".format(), "Please type complete username !"))
+                            }
                         }
                     }
                 }
             }
+            it.second.let {
+                return Pair(null,it)
+            }
         }
     }
 
-    private fun connectionErrorHandler(result:NetworkResponse<ResponseSuccess, ResponseError>): NetworkResponse<ResponseSuccess, ResponseError>?{
-        var forwardResponse = true
+    private fun connectionErrorHandler(result:NetworkResponse<ResponseSuccess, ResponseError>): Pair<ResponseSuccess?, ErrorType?>{
         when (result) {
+            is NetworkResponse.Success->{
+                return Pair(result.body,null)
+            }
             is NetworkResponse.ServerError -> {
                 result.body?.let {
-                    errorView.setError(ErrorType.ShowableError("Server Error: ".plus(result.code.toString()),it.errMsg))
+                    return Pair(null,ErrorType.ShowableError("Server Error: ".plus(result.code.toString()),it.errMsg))
                 }
-                forwardResponse = false
             }
             is NetworkResponse.NetworkError -> {
-                result.body?.let {
-                    errorView.setError(ErrorType.LogableError("Network Error: ",it.errMsg))
-                }
                 Log.e("Retrofit-Networking", result.error.toString())
-                forwardResponse = false
             }
             is NetworkResponse.UnknownError -> {
                 Log.e("Retrofit-Unknown", result.error.toString())
-                forwardResponse = false
             }
         }
-        if(forwardResponse){
-            return result
-        }
-        return null
+        return Pair(null,null)
     }
 }
 
@@ -132,4 +148,5 @@ sealed class UserRepoResponse{
     class searchSuccess(val result: UserSearch): UserRepoResponse()
     class vehicleFetchSuccess(val result: UserKnownVehicle?): UserRepoResponse()
     class editUserSuccess(val result: UserKnownVehicle): UserRepoResponse()
+    class vehicleAddSuccess(val result: Boolean): UserRepoResponse()
 }

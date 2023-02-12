@@ -21,7 +21,6 @@ class LoginRepository(context: Application, scope:CoroutineScope, macadress: Str
             this.macaddress = it
         }
     }
-
     suspend fun doSignUp(user: String,pass: String, simnumber:String): Pair<LoginRepoResponse?,ErrorType?>{
         val actionBody = LoginBody("signup",user,pass, this.macaddress, simnumber)
         return when(val result = loginService.loginEndpoint(actionBody)){

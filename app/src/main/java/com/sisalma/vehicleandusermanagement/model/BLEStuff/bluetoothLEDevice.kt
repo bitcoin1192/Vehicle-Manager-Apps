@@ -32,8 +32,6 @@ import no.nordicsemi.android.ble.ktx.suspendForValidResponse
 class bluetoothLEDeviceFinder private constructor(){
     private val scanResult: MutableList<BluetoothDevice> = arrayListOf()
     private val scanResultInternal: HashMap<String,BluetoothDevice> = hashMapOf()
-    private val deviceScanResult: MutableLiveData<List<BluetoothDevice>> = MutableLiveData()
-    val LiveDeviceScanResult: LiveData<List<BluetoothDevice>> get() = deviceScanResult
 
     var permissionFlag = false
     val deviceResult: List<BluetoothDevice> = arrayListOf()
@@ -44,7 +42,7 @@ class bluetoothLEDeviceFinder private constructor(){
     lateinit var btAdapterAddress: String
     private var scanning = false
     private val handler = Handler(Looper.getMainLooper())
-    private val SCAN_PERIOD = 5000L
+    private val SCAN_PERIOD = 2000L
 
     companion object{
         @Volatile private var bleFinder:bluetoothLEDeviceFinder ? = null
@@ -96,7 +94,7 @@ class bluetoothLEDeviceFinder private constructor(){
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             if(result.isConnectable){
                 scanResultInternal[result.device.address] = result.device
-                Log.i("BTScan", "advertisement data: %s".format(bytesToHex(result.scanRecord!!.bytes)));
+                //Log.i("BTScan", "advertisement data: %s".format(bytesToHex(result.scanRecord!!.bytes)));
             }
             super.onScanResult(callbackType, result)
         }
@@ -105,18 +103,25 @@ class bluetoothLEDeviceFinder private constructor(){
             super.onScanFailed(errorCode)
         }
     }
-    private val filter = arrayListOf<ScanFilter>(ScanFilter.Builder().setServiceUuid(ParcelUuid(
-        appServiceUUID)).build())
     private val setting = ScanSettings.Builder().setScanMode(SCAN_MODE_LOW_LATENCY).setCallbackType(
         CALLBACK_TYPE_ALL_MATCHES).build()
     @SuppressLint("MissingPermission")
-    suspend fun scanLeDevice(): BluetoothResponse {
+    suspend fun scanLeDevice(macaddress: String?): BluetoothResponse {
         if(permissionFlag) {
             if (!scanning) {
-                // Assign callback function when starting to scan
                 scanning = true
                 scanResultInternal.clear()
-                bluetoothLeScanner.startScan(null,setting,leScanCallback)
+                macaddress?.let {
+                    if (it.isNotBlank() or it.isNotEmpty()) {
+                        val filter = arrayListOf<ScanFilter>(
+                            ScanFilter.Builder().setDeviceAddress(it).build()
+                        )
+                        bluetoothLeScanner.startScan(filter,setting,leScanCallback)
+                    }else{
+                        bluetoothLeScanner.startScan(null,setting,leScanCallback)
+                    }
+                }
+                // Assign callback function when starting to scan
                 delay(SCAN_PERIOD)
                 bluetoothLeScanner.stopScan(leScanCallback)
                 scanning = false
@@ -139,11 +144,9 @@ class bluetoothLEDeviceFinder private constructor(){
     }
 
     fun findLEDevice(MacAddress: String):BluetoothDevice? {
-        if (deviceResult.size != 0) {
-            deviceResult.forEach {
-                if (it.address.toString().lowercase() == MacAddress.lowercase()) {
-                    return it
-                }
+        scanResult.forEach {
+            if (it.address.toString().lowercase() == MacAddress.lowercase()) {
+                return it
             }
         }
         return null

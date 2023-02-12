@@ -24,7 +24,7 @@ data class LoginResponse(val success: Boolean = true ,var msg: String, var uid: 
 
 data class IntentOnly(var intent: String, val changeData: String = "Empty")
 data class UserBody(var intent: String, var changeData: List<UserData>)
-data class UserData(var password: String, var query: String)
+data class UserData(var password: String, var query: String, var macaddress: String, var name:String)
 
 data class GroupBody(var intent: String, var changeMember: List<ChangeMemberForm>)
 data class ChangeMemberForm(val UID: Int = 0, val VID: Int)
@@ -48,6 +48,8 @@ interface UserBackend {
 
     @POST("userOps")
     suspend fun searchUserUID(@Body body: UserBody): NetworkResponse<ResponseSuccess, ResponseError>
+    @POST("userOps")
+    suspend fun addVehicle(@Body body: UserBody): NetworkResponse<ResponseSuccess, ResponseError>
 }
 
 interface VehicleBackend {
@@ -65,6 +67,8 @@ interface VehicleBackend {
 
     @POST("vehicleOps")
     suspend fun getVehicleSummary(@Body body: GroupBody): NetworkResponse<ResponseSuccess, ResponseError>
+    @POST("vehicleOps")
+    suspend fun getVehicleData(@Body body: GroupBody): NetworkResponse<ResponseSuccess, ResponseError>
 }
 class CustomCookies(val cache: CookieCache,val persistence: CookiePersistor): PersistentCookieJar(cache,persistence){
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
@@ -88,8 +92,8 @@ class APIEndpoint private constructor(){
         }
     }
 
-    val BASE_URL = "https://dev-api.sisalma.com/"
-    //val BASE_URL = "http://192.168.30.250:8080/"
+    //val BASE_URL = "https://dev-api.sisalma.com/"
+    val BASE_URL = "http://192.168.30.250:8080/"
     //val BASE_URL = "http://192.168.137.1:8080/"
     //val BASE_URL = "http://10.21.159.239:5000/"
     lateinit var cookieJar: CustomCookies

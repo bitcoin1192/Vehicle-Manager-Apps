@@ -26,9 +26,6 @@ class VehicleEdit: Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-
-        //Try to find and connect to BLE device
-
         val view = FragmentVehicleEditBinding.inflate(inflater, container, false)
         view.noUserMessage.text = "Waiting for data to arrive"
 
@@ -78,8 +75,8 @@ class VehicleEdit: Fragment() {
                                     MemberData(
                                         "",
                                         it.UID,
-                                        ""
-                                    )
+                                        "",
+                                    "","")
                                 )
                             )
                             temporary = SResult

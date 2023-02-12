@@ -69,6 +69,16 @@
         android:label="fragment_vehicle_add_selection"
         tools:layout="@layout/fragment_vehicle_add_selection" >
         <action
+            android:id="@+id/action_vehicle_add_selection_to_vehicle_add_info"
+            app:destination="@id/vehicle_add_info" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/vehicle_add_info"
+        android:name="com.sisalma.vehicleandusermanagement.view.VehicleAddInfo"
+        android:label="fragment_vehicle_add_info"
+        tools:layout="@layout/fragment_daftar_vehicle_info">
+        <action
             android:id="@+id/action_vehicle_add_selection_to_vehicleFragment"
             app:destination="@id/vehicleFragment"
             app:popUpTo="@id/vehicleFragment"

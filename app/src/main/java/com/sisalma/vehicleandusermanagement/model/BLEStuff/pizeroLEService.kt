@@ -170,23 +170,21 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
         var retry = 0
         gattConn?.let {
             try {
-                runBlocking { delay(800) }
                 //Wait for service to discovered
-                while (retry <= 10) {
+                while (retry <= 20) {
                     if(it.services.isNotEmpty()){
                         Log.i("LEDiscovery", "Found %s Service".format(it.services.size.toString()))
                         it.services.forEach{
                             Log.i("LEDiscovery", "Found service with uuid: %s with %s characteristics".format(it.uuid.toString(),it.characteristics.size.toString()))
                         }
                         service = it.services
-                        runBlocking { delay(2000L) }
+                        runBlocking { delay(500L) }
                         return it.services
                     }
-                    runBlocking { delay(500) }
+                    runBlocking { delay(100) }
                     retry++
-                    Log.i("LEDiscovery","retry %s".format(retry.toString()))
+                    Log.i("LEDiscoverService","retry %s".format(retry.toString()))
                 }
-                runBlocking { delay(6000L) }
             }catch(e: IllegalAccessError){
 
             }
@@ -198,7 +196,6 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
         var retry = 0
         gattConn?.let {
             try {
-                runBlocking { delay(2000) }
                 service.characteristics.forEach{
                     if (it.uuid == charUUID){
                         gattConn!!.readCharacteristic(it).let {
@@ -207,9 +204,9 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
                                     characteristicByteReturn[charUUID.toString()]?.let {
                                         return it
                                     }
-                                    runBlocking { delay(500) }
+                                    runBlocking { delay(100) }
                                     retry++
-                                    Log.i("LEDiscover","retry %s".format(retry.toString()))
+                                    Log.i("LEDiscoverCharacteristics","retry %s".format(retry.toString()))
                                 }
                             }
                         }
@@ -218,8 +215,7 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
                 //Wait for service to discovered
                 }
             catch(e: IllegalAccessError){ }
-            runBlocking { delay(5000L) }
-            }
+                        }
         return ByteArray(0)
     }
 
@@ -257,14 +253,13 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
         var retry = 0
         gattConn?.let {
             try {
-                runBlocking { delay(2000) }
                 service.characteristics.forEach{
                     if (it.uuid == charUUID){
                         it.value = setStatus.toByteArray()
                         gattConn!!.writeCharacteristic(it).let {
                             if (it){
                                 while (retry <= 20) {
-                                    runBlocking { delay(500) }
+                                    runBlocking { delay(100) }
                                     retry++
                                     Log.i("LEDiscover","retry %s".format(retry.toString()))
                                 }
@@ -275,7 +270,7 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
                 //Wait for service to discovered
             }
             catch(e: IllegalAccessError){ }
-            runBlocking { delay(5000L) }
+            runBlocking { delay(2000L) }
         }
     }
 
@@ -294,7 +289,7 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
             blueDev = null
             service = null
         }
-        runBlocking { delay(2000) }
+        runBlocking { delay(300) }
     }
     @SuppressLint("MissingPermission")
     fun startConnnection(bleDev: BluetoothDevice){
