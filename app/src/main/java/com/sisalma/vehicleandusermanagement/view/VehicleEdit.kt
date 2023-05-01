@@ -6,19 +6,24 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.viewbinding.ViewBinding
+import com.sisalma.vehicleandusermanagement.FormDialogFragment
 import com.sisalma.vehicleandusermanagement.databinding.FragmentVehicleEditBinding
 import com.sisalma.vehicleandusermanagement.helper.ViewModelDialog
 import com.sisalma.vehicleandusermanagement.helper.ViewModelUser
 import com.sisalma.vehicleandusermanagement.helper.ViewModelVehicle
 import com.sisalma.vehicleandusermanagement.model.API.MemberData
 import com.sisalma.vehicleandusermanagement.model.SearchResult
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class VehicleEdit: Fragment() {
     private var contentIsReady = false
     private val ViewModelVehicle: ViewModelVehicle by activityViewModels()
     private val ViewModelUser: ViewModelUser by activityViewModels()
     private val ViewModelDialog: ViewModelDialog by activityViewModels()
+    private val FormFragment = FormDialogFragment()
     private var temporary = SearchResult(0,"")
 
     override fun onCreateView(
@@ -66,22 +71,18 @@ class VehicleEdit: Fragment() {
 
         ViewModelDialog.liveDataInputResponse.observe(viewLifecycleOwner){ queryName ->
             queryName?.let { query->
-                ViewModelUser.searchUserUID(query)
-                ViewModelUser.searchResult.observe(viewLifecycleOwner){ SResult ->
-                    SResult?.let {
-                        if(it.hashCode() != temporary.hashCode()) {
-                            ViewModelVehicle.updateMemberData(
-                                memberDataWrapper.add(
-                                    MemberData(
-                                        "",
-                                        it.UID,
-                                        "",
+                lifecycleScope.launch(Dispatchers.IO){
+                    ViewModelUser.searchExactUserUID(query)?.let {
+                        ViewModelVehicle.updateMemberData(
+                            memberDataWrapper.add(
+                                MemberData(
+                                    "",
+                                    it.UID,
+                                    "",
                                     "","")
-                                )
                             )
-                            temporary = SResult
-                            ViewModelVehicle.addMember(ViewModelVehicle.formMemberList)
-                        }
+                        )
+                        ViewModelVehicle.addMember(ViewModelVehicle.formMemberList)
                     }
                 }
             }
