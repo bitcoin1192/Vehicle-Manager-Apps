@@ -43,29 +43,25 @@ class VehicleRepository(val context: Application, val BLEFinder: bluetoothLEDevi
     suspend fun getVehicleSummary(VID: Int):Pair<ListMemberData?,ErrorType?>{
         return runGetVehicleMember(GroupBody("member", arrayListOf(ChangeMemberForm(0,VID))))
     }
-    suspend fun getVehicleData(VID: Int):Pair<VehicleData?,ErrorType?>{
+    suspend fun getVehicleData(VID: Int):Pair<VehicleDataWrapper?,ErrorType?>{
         return runGetVehicleData(GroupBody("data", arrayListOf(ChangeMemberForm(0,VID))))
     }
 
-    suspend fun findFromScannedList(deviceName: String):BluetoothDevice?{
-        BLEFinder?.scanLeDevice("").let { bluetoothResponse ->
+    suspend fun findFromScannedList(deviceAddr: String):BluetoothDevice?{
+        BLEFinder?.scanLeDevice(deviceAddr).let { bluetoothResponse ->
             when (bluetoothResponse){
                 is BluetoothResponse.deviceScanResult->{
                     bluetoothResponse.devices.forEach{ device ->
-                        BLEService?.let {
-                            it.getPiService(device)
-                            BLEService?.isDeviceCorrect()
-                        }
+                        return device
                     }
-                }else->{
-
+                }
+                is BluetoothResponse.deviceScanFail->{
+                    Log.i("BLEDevice", "Scan fail: ".format(bluetoothResponse.msg))
+                    return null
                 }
             }
-
         }
-        BLEFinder?.findLEDevice(deviceName).let {
-            return it
-        }
+        return null
     }
 
     @SuppressLint("MissingPermission")
@@ -139,12 +135,12 @@ class VehicleRepository(val context: Application, val BLEFinder: bluetoothLEDevi
             return Pair(null, OKResponse.second)
         }
     }
-    private suspend fun runGetVehicleData(actionBody: GroupBody):Pair<VehicleData?,ErrorType?>{
+    private suspend fun runGetVehicleData(actionBody: GroupBody):Pair<VehicleDataWrapper?,ErrorType?>{
         val result = endPointService.getVehicleData(actionBody)
         val gson  = Gson()
         connectionStatusHandler(result).let { OKResponse ->
             OKResponse.first?.msg?.let {
-                return Pair(gson.fromJson(it, VehicleData::class.java),null)
+                return Pair(gson.fromJson(it, VehicleDataWrapper::class.java),null)
             }
             return Pair(null, OKResponse.second)
         }
@@ -184,6 +180,19 @@ class VehicleRepository(val context: Application, val BLEFinder: bluetoothLEDevi
             }
             return Pair(null, OKResponse.second)
         }
+    }
+
+    suspend fun requestGetLockVehicle(btMac: String):Pair<BluetoothResponse?,ErrorType?>{
+        findFromScannedList(btMac)?.let {
+            BLEService = BLEFinder?.btAdapter?.let { it1 -> pizeroLEService(it1,context) }
+            BLEService?.startConnnection(it)
+            BLEService?.let { it1 ->
+                pizeroDevice(it1).readLockStatus()?.let { it2 ->
+                    return Pair(BluetoothResponse.characteristicRead(it2),null)
+                }
+            }
+        }
+        return Pair(null, ErrorType.ShowableError("BLEFinder","Cant find specified device: %s".format(btMac)))
     }
     private fun connectionStatusHandler(result:NetworkResponse<ResponseSuccess, ResponseError>): Pair<ResponseSuccess?, ErrorType?>{
         when (result) {
@@ -239,4 +248,5 @@ data class ListMemberData(val VehicleMember:List<MemberData>)
 data class MemberData(val Username:String, val UID: Int, val AccKey: String, val macaddress: String, val name:String)
 data class VehicleLockResponse(val VehicleEnable:Boolean, val macaddress: String)
 data class VehicleData(val VID: Int, val UID: Int, val BTMacAddress: String, val name: String)
+data class VehicleDataWrapper(val VehicleData: VehicleData)
 data class ListVehicleData(val VehicleData:List<VehicleData>)
