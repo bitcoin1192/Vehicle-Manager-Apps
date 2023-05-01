@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.sisalma.vehicleandusermanagement.databinding.FragmentVehicleEditBinding
 import com.sisalma.vehicleandusermanagement.databinding.FragmentVehicleMenuBinding
@@ -15,6 +16,8 @@ import com.sisalma.vehicleandusermanagement.helper.ViewModelUser
 import com.sisalma.vehicleandusermanagement.helper.ViewModelVehicle
 import com.sisalma.vehicleandusermanagement.model.SearchResult
 import com.sisalma.vehicleandusermanagement.view.VehicleFragmentDirections
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class fragmentVehicleMenu : Fragment() {
     val ViewModelDialog: ViewModelDialog by activityViewModels()
@@ -30,9 +33,7 @@ class fragmentVehicleMenu : Fragment() {
         }
         // Inflate the layout for this fragment
         val view = FragmentVehicleMenuBinding.inflate(inflater,container,false)
-        ViewModelVehicle.dataIsLoaded.observe(viewLifecycleOwner){
-            ViewModelVehicle.connectDevice()
-        }
+
         // TODO(Fill in each image button with findNavController().navigate(action) to navigate to next destination fragment)
         ViewModelVehicle.currentVehicleLockStats.observe(viewLifecycleOwner){
             if (it){
@@ -50,25 +51,21 @@ class fragmentVehicleMenu : Fragment() {
             ViewModelVehicle.setDeviceLockStatus(true)
         }
         view.imgTransfer.setOnClickListener{
-            ViewModelDialog.showInputForm("Please enter target username")
+            val new = FormDialogFragment()
+            activity?.supportFragmentManager?.let {
+                new.setMessage("Please enter target username")
+                new.show(it,"OwnerTransfer")
+            }
+            //ViewModelDialog.showInputForm("Please enter target username")
         }
-        val new = FormDialogFragment()
-        activity?.supportFragmentManager?.let {
-            new.setMessage("Hello")
-            new.show(it,"Bgsc")
-        }
+
         ViewModelDialog.liveDataInputResponse.observe(viewLifecycleOwner){
             it?.let { userInput ->
-                ViewModelUser.searchUserUID(userInput)
-                ViewModelUser.searchResult.observe(viewLifecycleOwner) { searchResult ->
-                    searchResult?.let { result ->
-                        //Hacky solution, check hashcode to differentiate trigger twice bug. Still no root cause
-                        if(result.hashCode() != temporary.hashCode()){
-                            ViewModelVehicle.transferVehicleOwnership(result.UID)
-                            temporary = searchResult
-                            val action = fragmentVehicleMenuDirections.actionVehicleMenuFragmentToVehicleFragment()
-                            findNavController().navigate(action)
-                        }
+                lifecycleScope.launch(Dispatchers.IO){
+                    ViewModelUser.searchExactUserUID(userInput)?.let {
+                        ViewModelVehicle.transferVehicleOwnership(it.UID)
+                        val action = fragmentVehicleMenuDirections.actionVehicleMenuFragmentToVehicleFragment()
+                        findNavController().navigate(action)
                     }
                 }
             }

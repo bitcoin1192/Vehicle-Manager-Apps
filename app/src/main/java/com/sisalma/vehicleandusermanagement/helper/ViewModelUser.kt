@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
+//TODO("Start to move away from livedata for some function...")
 class ViewModelUser(App: Application): AndroidViewModel(App) {
     private val userRepo = UserRepository(App)
 
@@ -17,9 +18,6 @@ class ViewModelUser(App: Application): AndroidViewModel(App) {
     private val _ownedVehicleList: MutableLiveData<List<VehicleInformation>> = MutableLiveData()
     val ownedVehicleList:  LiveData<List<VehicleInformation>> get() = _ownedVehicleList
     val mutableSearchResult: MutableLiveData<SearchResult?> = MutableLiveData()
-    val searchResult: LiveData<SearchResult?> get() = mutableSearchResult
-    val _statusVehicleAdd: MutableLiveData<Boolean> get() = MutableLiveData()
-    val statusVehicleAdd: LiveData<Boolean> get() = _statusVehicleAdd
 
     lateinit var msgData: UserKnownVehicle
 
@@ -62,24 +60,33 @@ class ViewModelUser(App: Application): AndroidViewModel(App) {
         }
     }
 
-    fun searchUserUID(query: String){
-        viewModelScope.launch(Dispatchers.IO){
-            val result = userRepo.searchUserUID(query)
-            result.first?.let {
-                when(it){
-                    is UserRepoResponse.searchSuccess->{
-                        it.result.let {
-                            mutableSearchResult.postValue(it.SearchUserResult[0])
-                        }
-                    }
+    suspend fun searchUserUID(query: String): List<SearchResult>?{
+        val result = userRepo.searchUserUID(query)
+        result.first?.let {
+            when(it){
+                is UserRepoResponse.searchSuccess->{
+                    return it.result.SearchUserResult
                 }
-            }
-            result.second?.let {
-                _error.postValue(it)
+                else -> {}
             }
         }
+        result.second?.let {
+            _error.postValue(it)
+        }
+        return null
     }
 
+    suspend fun searchExactUserUID(query: String): SearchResult?{
+        searchUserUID(query)?.let {
+            if (it.size == 1){
+                return it[0]
+            }
+            else{
+                _error.postValue(ErrorType.ShowableError("searchExactUser","Please type exact username !"))
+            }
+        }
+        return null
+    }
     fun addVehicle(vehicle: VehicleData): Boolean{
         runBlocking { return@runBlocking userRepo.addVehicle(vehicle) }.let {
             it.first?.let {
@@ -97,22 +104,6 @@ class ViewModelUser(App: Application): AndroidViewModel(App) {
             }
         }
         return false
-    }
-    fun setResponse(resp: UserRepoResponse?){
-        when(resp){
-            is UserRepoResponse.vehicleFetchSuccess -> {
-                /*resp.result?.let {
-                    msgData = it
-                    refreshView()
-                }*/
-            }
-            is UserRepoResponse.searchSuccess -> {
-                //mutableSearchResult.value = resp.result.SearchUserResult[0]
-            }
-            is UserRepoResponse.vehicleAddSuccess->{
-                //_statusVehicleAdd.value = true
-            }
-        }
     }
 }
 sealed class userOperationRequest(){
