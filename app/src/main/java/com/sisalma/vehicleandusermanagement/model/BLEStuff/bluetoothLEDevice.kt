@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.ParcelUuid
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -92,11 +93,19 @@ class bluetoothLEDeviceFinder private constructor(){
     // Device scan callback.
     private val leScanCallback: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
-            if(result.isConnectable){
-                scanResultInternal[result.device.address] = result.device
-                //Log.i("BTScan", "advertisement data: %s".format(bytesToHex(result.scanRecord!!.bytes)));
+            scanResultInternal[result.device.address] = result.device
+            @RequiresApi(Build.VERSION_CODES.O)
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (!result.isConnectable) {
+                    scanResultInternal.remove(result.device.address)
+                    //Log.i("BTScan", "advertisement data: %s".format(bytesToHex(result.scanRecord!!.bytes)));
+                }
             }
             super.onScanResult(callbackType, result)
+        }
+
+        override fun onBatchScanResults(results: MutableList<ScanResult>?) {
+            super.onBatchScanResults(results)
         }
         override fun onScanFailed(errorCode: Int) {
             Log.e("BTScan","Failed scanning device")
@@ -111,15 +120,22 @@ class bluetoothLEDeviceFinder private constructor(){
             if (!scanning) {
                 scanning = true
                 scanResultInternal.clear()
-                macaddress?.let {
-                    if (it.isNotBlank() or it.isNotEmpty()) {
-                        val filter = arrayListOf<ScanFilter>(
-                            ScanFilter.Builder().setDeviceAddress(it).build()
-                        )
-                        bluetoothLeScanner.startScan(filter,setting,leScanCallback)
-                    }else{
-                        bluetoothLeScanner.startScan(null,setting,leScanCallback)
+                try {
+                    macaddress?.let {
+                        if (it.isNotBlank() or it.isNotEmpty()) {
+                            val filter = arrayListOf<ScanFilter>(
+                                ScanFilter.Builder().setDeviceAddress(it).build()
+                            )
+                            bluetoothLeScanner.startScan(filter,setting,leScanCallback)
+                        }else{
+                            bluetoothLeScanner.startScan(null,setting,leScanCallback)
+                        }
                     }
+                }catch (e: IllegalArgumentException){
+                    e.message?.let {
+                        return BluetoothResponse.deviceScanFail(it)
+                    }
+                    return BluetoothResponse.deviceScanFail("Bluetooth Scan unknown error")
                 }
                 // Assign callback function when starting to scan
                 delay(SCAN_PERIOD)
@@ -127,6 +143,7 @@ class bluetoothLEDeviceFinder private constructor(){
                 scanning = false
                 scanResult.clear()
                 scanResultInternal.keys.forEach{ address ->
+                    //Log.i("BLEDeviceFinder","Device Name is: %s-%s".format(address.dropLast(6),address.drop(11)))
                     Log.i("BLEDeviceFinder","Device Name is: %s".format(address))
                     scanResultInternal[address]?.let {
                         scanResult.add(it)
@@ -164,65 +181,17 @@ class bluetoothLEDeviceFinder private constructor(){
     }
     fun AdapterAddress(): String{
         if(permissionFlag){
-            return btAdapterAddress.toString()
+            return btAdapterAddress
         }
         return "01:00:00:00:00:00"
     }
 }
-
-class test(app:Application): BleManager(app){
-    private var LockCharacteristic: BluetoothGattCharacteristic? = null
-    override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
-        val service = gatt.getService(appServiceUUID)
-        if (service != null){
-            LockCharacteristic = service.getCharacteristic(lockCharacteristicUUID)
-            return true
-        }else{
-            return false
-        }
-    }
-
-    override fun initialize() {
-        requestMtu(517).enqueue()
-    }
-
-    override fun onServicesInvalidated() {
-        LockCharacteristic = null
-        super.onServicesInvalidated()
-    }
-
-    suspend fun readLockStatus(){
-        readCharacteristic(LockCharacteristic).with{
-            device, data ->
-            if(data.value?.size!! >1){
-                data.value?.let {
-                    it.toString()
-                }
-            }
-        }.suspendForValidResponse<ProfileReadResponse>().let {
-            it.rawData?.value.toString().let {
-                Log.i("BLEResponse","Data Arrive: %s".format(it))
-            }
-        }
-    }
-
-    suspend fun writeLockStatus(setStatus: Boolean){
-        lateinit var dataToSend: Data
-        try {
-            if (setStatus){
-                val data = writeCharacteristic(LockCharacteristic,"lock".toByteArray(),BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE).suspend()
-            }else{
-                val data = writeCharacteristic(LockCharacteristic,"unlock".toByteArray(),BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE).suspend()
-            }
-        } catch (e: Exception) {
-            Log.e("BLEResponse",e.message.toString())
-        }
-    }
-}
 sealed class BluetoothResponse(){
     class deviceScanResult(var devices: List<BluetoothDevice>): BluetoothResponse()
+    class deviceScanFail(var msg: String): BluetoothResponse()
     class connectionSuccess(var msg: String): BluetoothResponse()
     class connectionFailed(var msg: String): BluetoothResponse()
-    class gattSent(var msg: String): BluetoothResponse()
+    class characteristicRead (var msg: Boolean): BluetoothResponse()
+    class characteristicWrite(var msg: String): BluetoothResponse()
     class gattFail(var msg: String): BluetoothResponse()
 }
