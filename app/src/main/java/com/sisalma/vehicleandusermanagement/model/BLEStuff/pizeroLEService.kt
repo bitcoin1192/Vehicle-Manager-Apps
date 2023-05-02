@@ -65,13 +65,12 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
     var characteristicByteReturn: HashMap<String,ByteArray> = HashMap()
 
     init {
-        if(ContextCompat.checkSelfPermission(
-            app,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
-            app,
-            Manifest.permission.BLUETOOTH
-        ) == PackageManager.PERMISSION_GRANTED){
+        if(ContextCompat.checkSelfPermission(app, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+            (ContextCompat.checkSelfPermission(app,Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED) ||
+            (ContextCompat.checkSelfPermission(app,Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(app,Manifest.permission.BLUETOOTH_ADMIN) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(app,Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED)
+        ){
             permission = true
         }
     }
@@ -92,10 +91,11 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             if(permission){
-                gatt?.let{
-                    service = it.services
-                    Log.i("pizeroLEService","Service discovered")
-                }
+                Log.i("pizeroLEService","It's working")
+            }
+            gatt?.let{
+                service = it.services
+                Log.i("pizeroLEService","Service discovered")
             }
             super.onServicesDiscovered(gatt, status)
         }
@@ -171,7 +171,7 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
         gattConn?.let {
             try {
                 //Wait for service to discovered
-                while (retry <= 20) {
+                while (retry <= 40) {
                     if(it.services.isNotEmpty()){
                         Log.i("LEDiscovery", "Found %s Service".format(it.services.size.toString()))
                         it.services.forEach{
@@ -185,8 +185,8 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
                     retry++
                     Log.i("LEDiscoverService","retry %s".format(retry.toString()))
                 }
-            }catch(e: IllegalAccessError){
-
+            }catch(e: java.lang.IllegalArgumentException){
+                return null
             }
         }
         return null
@@ -225,7 +225,7 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
         if (serviceList != null) {
             if (serviceList.isNotEmpty()) {
                 serviceList.forEach {
-                    //Log.i("LEDiscovery", "Found service with uuid: %s with %s characteristics".format(it.uuid.toString(),it.characteristics.size.toString()))
+                    Log.i("LEDiscovery", "Found service with uuid: %s with %s characteristics".format(it.uuid.toString(),it.characteristics.size.toString()))
                     if (it.uuid == statusCharacteristicUUID) {
                         return blueDev
                     }
@@ -317,7 +317,7 @@ class pizeroDevice(val service: pizeroLEService ){
             }
         }
     }
-    fun readLockStatus():String? {
+    fun readLockStatus():Boolean? {
         val gattserv = service.getServiceByUUID(statusCharacteristicUUID)
         var message: String = ""
         gattserv?.let { services ->
@@ -330,9 +330,9 @@ class pizeroDevice(val service: pizeroLEService ){
                             message += it.toInt().toChar()
                         }
                         if (message == "Vehicle is Locked"){
-                            return "Lock"
-                        }else{
-                            return "Unlock"
+                            return true
+                        }else if(message == "Vehicle is Unlocked"){
+                            return false
                         }
                     }
                     Log.i(

@@ -5,30 +5,16 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.le.*
 import android.bluetooth.le.ScanSettings.*
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.os.ParcelUuid
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.appServiceUUID
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.lockCharacteristicUUID
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.statusCharacteristicUUID
 import kotlinx.coroutines.delay
-import no.nordicsemi.android.ble.BleManager
-import no.nordicsemi.android.ble.callback.profile.ProfileReadResponse
-import no.nordicsemi.android.ble.data.Data
-import no.nordicsemi.android.ble.ktx.suspend
-import no.nordicsemi.android.ble.ktx.suspendForResponse
-import no.nordicsemi.android.ble.ktx.suspendForValidResponse
 
 class bluetoothLEDeviceFinder private constructor(){
     private val scanResult: MutableList<BluetoothDevice> = arrayListOf()
@@ -40,7 +26,7 @@ class bluetoothLEDeviceFinder private constructor(){
 
     //Adapter MAC Address is constant "02::", problem is if we're going to use this mac as account auth factor...
     lateinit var btAdapter: BluetoothAdapter
-    lateinit var btAdapterAddress: String
+    var btAdapterAddress: String? = null
     private var scanning = false
     private val handler = Handler(Looper.getMainLooper())
     private val SCAN_PERIOD = 2000L
@@ -64,13 +50,13 @@ class bluetoothLEDeviceFinder private constructor(){
             bleFinder?.checkPermission(context)
         }
     }
-    fun checkPermission(context: Application){
+    fun checkPermission(context: Application):Boolean{
         Log.i("BLEDeviceFinder","Check for BLE Scan Permission")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if(ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN)!=PackageManager.PERMISSION_GRANTED){
                 permissionFlag = false
                 Log.i("BLEDeviceFinder","Permission not Granted")
-
+                return false
                 /*val requestPermissionLauncher =
                     registerForActivityResult(RequestPermission()){
 
@@ -84,11 +70,13 @@ class bluetoothLEDeviceFinder private constructor(){
             } else {
                 permissionFlag = true
                 Log.i("BLEDeviceFinder","Permission is Granted")
+                return true
             }
         } else {
             permissionFlag = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)==PackageManager.PERMISSION_GRANTED
         }
         Log.i("BLEDeviceFinder", permissionFlag.toString())
+        return permissionFlag
     }
     // Device scan callback.
     private val leScanCallback: ScanCallback = object : ScanCallback() {
@@ -180,8 +168,8 @@ class bluetoothLEDeviceFinder private constructor(){
         return String(hexChars)
     }
     fun AdapterAddress(): String{
-        if(permissionFlag){
-            return btAdapterAddress
+        btAdapterAddress?.let {
+            return it
         }
         return "01:00:00:00:00:00"
     }
