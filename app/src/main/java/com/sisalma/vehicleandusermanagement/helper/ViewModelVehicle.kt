@@ -12,6 +12,8 @@ import com.sisalma.vehicleandusermanagement.model.BluetoothResponse
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import com.sisalma.vehicleandusermanagement.view.memberDataWrapper
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 class ViewModelVehicle(application: Application): AndroidViewModel(application) {
@@ -33,11 +35,7 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
     private val _error: MutableLiveData<ErrorType> = MutableLiveData()
     val error: LiveData<ErrorType> get() = _error
 
-    private var latestMemberList : HashMap<Int,MemberData> = HashMap()
     var formMemberList : HashMap<Int,MemberData> = HashMap()
-
-    private val _nearbyVehicleList: MutableLiveData<ListVehicleData> = MutableLiveData()
-    val nearbyVehicleList: LiveData<ListVehicleData> get() = _nearbyVehicleList
 
     private val _currentVehicleLockStatus: MutableLiveData<Boolean> = MutableLiveData(false)
     val currentVehicleLockStats  get() = _currentVehicleLockStatus
@@ -63,8 +61,9 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
     fun reloadBtAdapter(){
         btMan.adapter?.let { adapter ->
             bleFinder = bluetoothLEDeviceFinder.getInstance(adapter,getApplication())
-            //bleFinder.checkPermission(getApplication())
+            bleFinder.checkPermission(getApplication())
             if (bleFinder.permissionFlag){
+                Log.i("ViewVehicle",bleFinder.AdapterAddress().dropLast(3)+"IA")
                 viewModelScope.launch(Dispatchers.IO){
                     bleFinder.scanLeDevice("")
                     vehicleRepository = VehicleRepository(getApplication(),bleFinder)
@@ -164,20 +163,18 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
         }
     }
 
-    fun getNearbyDevice(){
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = vehicleRepository.findNearbyDevice()
-            when(result){
-                is BluetoothResponse.deviceScanResult->{
-                    val list: MutableList<VehicleData> = arrayListOf()
-                    result.devices.forEach{
-                        list.add(VehicleData(0,0,it.address.toString(),""))
-                    }
-                    _nearbyVehicleList.postValue(ListVehicleData(list))
+    fun getNearbyDevice()= flow<ListVehicleData>{
+        val result = vehicleRepository.findNearbyDevice()
+        when(result){
+            is BluetoothResponse.deviceScanResult->{
+                val list: MutableList<VehicleData> = arrayListOf()
+                result.devices.forEach{
+                    list.add(VehicleData(0,0,it.address.toString(),""))
                 }
+                emit(ListVehicleData(list))
             }
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
     fun connectDevice(){
         Data?.let {

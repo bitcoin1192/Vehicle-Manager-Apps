@@ -44,7 +44,7 @@ class VehicleListSlider(): Fragment() {
                 setFragmentResult("fragmentFinish", bundleOf(Pair("vehicleAdditionPage",1)))
             }
             view.titlePageVehicle.text = "Owned by you"
-            view.VehicleList.adapter = EmptyDataPage("Data motor tidak tersedia")
+            view.VehicleList.adapter = EmptyDataPage("Data motor tidak tersedia",null)
             ViewModelUser.ownedVehicleList.observe(this.viewLifecycleOwner) {
                 it?.let {
                     if (it.isNotEmpty()) {
@@ -55,13 +55,13 @@ class VehicleListSlider(): Fragment() {
                             )
                         }
                     }else{
-                        view.VehicleList.adapter = EmptyDataPage("Data motor tidak tersedia")
+                        view.VehicleList.adapter = EmptyDataPage("Data motor tidak tersedia",null)
                     }
                 }
             }
         }else if(page > 0){
             view.titlePageVehicle.text = "Leased to you"
-            view.VehicleList.adapter = EmptyDataPage("Tidak ada motor yang dapat dipinjam")
+            view.VehicleList.adapter = EmptyDataPage("Tidak ada motor yang dapat dipinjam",null)
             ViewModelUser.leaseVehicleList.observe(this.viewLifecycleOwner){
                 it?.let {
                     if (it.isNotEmpty()) {
@@ -73,7 +73,7 @@ class VehicleListSlider(): Fragment() {
                         }
                     }
                     else{
-                        view.VehicleList.adapter = EmptyDataPage("Tidak ada motor yang dapat dipinjam")
+                        view.VehicleList.adapter = EmptyDataPage("Tidak ada motor yang dapat dipinjam",null)
                     }
                 }
             }

@@ -39,7 +39,7 @@ class launcher_activity : AppCompatActivity() {
         var binding = ActivityLauncherBinding.inflate(layoutInflater)
         //btSetup()
         navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        UserRepository = UserRepository(this.application)
+        //UserRepository = UserRepository(this.application)
         bindViewModelRequest()
         bindViewModelRepository()
         bindViewModelStatus()
@@ -83,6 +83,9 @@ class launcher_activity : AppCompatActivity() {
                 is vehicleOperationRequest.bluetoothPermisionRequest ->{
                     showPermissionAsker()
                 }
+                is vehicleOperationRequest.bluetoothEnableRequest->{
+                    enableBT()
+                }
             }
         }
     }
@@ -91,13 +94,6 @@ class launcher_activity : AppCompatActivity() {
     }
 
     fun bindViewModelStatus(){
-        ViewModelLogin.status.observe(this){
-            when(it){
-                is LoginResponseState.errorLogin -> {
-                    ViewModelError.setError(ErrorType.LogableError("ViewModelLogin", it.errorMsg))
-                }
-            }
-        }
         ViewModelUser.error.observe(this){
             ViewModelError.setError(it)
         }
@@ -124,7 +120,10 @@ class launcher_activity : AppCompatActivity() {
             }
         }
     }
-
+    fun enableBT(){
+        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+        requestBluetooth.launch(enableBtIntent)
+    }
     fun showPermissionAsker(){
         //Permission for Android 12 and above
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -137,15 +136,16 @@ class launcher_activity : AppCompatActivity() {
         //Permission for Android 11 and below
         else{
             //BT Should be granted already, but needed fine location permission to scan
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            requestBluetooth.launch(enableBtIntent)
-            requestMultiplePermissions.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH)).also {
-
-            }
+            requestMultiplePermissions.launch(arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.BLUETOOTH))
         }
     }
     private var requestBluetooth = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val edit = application.getSharedPreferences("vehiclemanager", MODE_PRIVATE).edit()
+        ViewModelVehicle.reloadBtAdapter()
+        ViewModelLogin.reloadLoginRepo()
         if (result.resultCode == RESULT_OK) {
             edit.putBoolean("bluetoothEnable",true)
         }else{
@@ -157,9 +157,8 @@ class launcher_activity : AppCompatActivity() {
     private val requestMultiplePermissions =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             permissions.entries.forEach {
-                if (it.key == Manifest.permission.ACCESS_FINE_LOCATION && it.value == true){
-                    ViewModelVehicle.reloadBtAdapter()
-                    ViewModelLogin.reloadLoginRepo()
+                if (it.key == Manifest.permission.BLUETOOTH_SCAN && it.value == true || it.key ==Manifest.permission.BLUETOOTH && it.value == true){
+                    enableBT()
                 }
                 Log.i("PermissionEntry",it.key+": "+it.value)
             }

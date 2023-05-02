@@ -1,13 +1,13 @@
 package com.sisalma.vehicleandusermanagement.view
 
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.sisalma.vehicleandusermanagement.databinding.FragmentEmptyContainerBinding
 
-class EmptyDataPage(showMessage: String?) : RecyclerView.Adapter<EmptyDataPage.ViewHolder>() {
-    val message: String? = showMessage
+class EmptyDataPage(val showMessage: String?, val showImage: Drawable?) : RecyclerView.Adapter<EmptyDataPage.ViewHolder>() {
     override fun getItemCount(): Int {
         return  1
     }
@@ -24,7 +24,8 @@ class EmptyDataPage(showMessage: String?) : RecyclerView.Adapter<EmptyDataPage.V
         )
     }
     inner class ViewHolder(binding: FragmentEmptyContainerBinding):RecyclerView.ViewHolder(binding.root) {
-        val EmptyMessage: TextView = binding.textView3
+        val EmptyMessage = binding.textView3
+        val imageToShow = binding.imageView3
 
         fun setMessage(input: String){
             EmptyMessage.text = input
@@ -33,8 +34,11 @@ class EmptyDataPage(showMessage: String?) : RecyclerView.Adapter<EmptyDataPage.V
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.EmptyMessage.text = "You don't have data object in this page"
-        message?.let {
+        showMessage?.let {
             holder.EmptyMessage.text = it
+        }
+        showImage?.let {
+            holder.imageToShow.setImageDrawable(it)
         }
 
     }

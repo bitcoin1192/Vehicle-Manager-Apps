@@ -29,7 +29,6 @@ class VehicleAddInfo: Fragment() {
         val view = FragmentDaftarVehicleInfoBinding.inflate(inflater, container, false)
         view.btnDaftar.setOnClickListener {
             ViewModelVehicle.selectedMemberData?.let { it1 ->
-                //ViewModelUser.addVehicle(MemberData("",0,"",it1.name,view.editTextTextPersonName.text.toString()))
                 ViewModelUser.addVehicle(it1).let {
                     val action = VehicleAddInfoDirections.actionVehicleAddSelectionToVehicleFragment()
                     findNavController().navigate(action)
