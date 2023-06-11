@@ -2,21 +2,18 @@ package com.sisalma.vehicleandusermanagement.model.API
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.bluetooth.BluetoothDevice
 import android.util.Log
 import com.google.gson.Gson
 import com.haroldadmin.cnradapter.NetworkResponse
 import com.sisalma.vehicleandusermanagement.helper.ErrorType
-import com.sisalma.vehicleandusermanagement.helper.vehicleOperationRequest
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroDevice
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroLEService
+import com.sisalma.vehicleandusermanagement.model.BLEStuff.VehicleDeviceManager
+//import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroDevice
 import com.sisalma.vehicleandusermanagement.model.BluetoothResponse
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 
 class VehicleRepository(val context: Application, val BLEFinder: bluetoothLEDeviceFinder?) {
-    private var BLEService: pizeroLEService? = null
     private val endPointService = APIEndpoint.getInstance(context).vehicleService
-
+    private val ourDevice: HashMap<String, VehicleDeviceManager> = hashMapOf()
     suspend fun addFriend(VID: Int,UIDTarget: ListMemberData):Pair<opResult?,ErrorType?>{
         val form = arrayListOf<ChangeMemberForm>()
         UIDTarget.VehicleMember.forEach{
@@ -47,27 +44,25 @@ class VehicleRepository(val context: Application, val BLEFinder: bluetoothLEDevi
         return runGetVehicleData(GroupBody("data", arrayListOf(ChangeMemberForm(0,VID))))
     }
 
-    suspend fun findFromScannedList(deviceAddr: String):BluetoothDevice?{
-        BLEFinder?.scanLeDevice(deviceAddr).let { bluetoothResponse ->
-            when (bluetoothResponse){
-                is BluetoothResponse.deviceScanResult->{
-                    bluetoothResponse.devices.forEach{ device ->
-                        return device
-                    }
-                }
-                is BluetoothResponse.deviceScanFail->{
-                    Log.i("BLEDevice", "Scan fail: ".format(bluetoothResponse.msg))
-                    return null
-                }
-            }
+    suspend fun findFromScannedList(deviceAddr: String):VehicleDeviceManager?{
+        ourDevice[deviceAddr]?:BLEFinder?.connectOurDevice(deviceAddr)?.let {
+            ourDevice.set(deviceAddr,it)
         }
-        return null
+        return ourDevice[deviceAddr]
     }
 
     @SuppressLint("MissingPermission")
     suspend fun findNearbyDevice():BluetoothResponse?{
-        val ourDevice: MutableList<BluetoothDevice> = arrayListOf()
-        BLEFinder?.scanLeDevice("")?.let { response ->
+        ourDevice.clear()
+        BLEFinder?.findOurDevice("")?.let {
+            it.keys.forEach {keys->
+                it[keys]?.let {
+                    ourDevice.set(keys,it)
+                }
+            }
+            return BluetoothResponse.deviceResult(ourDevice)
+        }
+        /*BLEFinder?.scanLeDevice("")?.let { response ->
             bluetoothStatusHandler(response).first?.let { bluetoothResponse ->
                 when(bluetoothResponse){
                     is BluetoothResponse.deviceScanResult ->{
@@ -95,17 +90,17 @@ class VehicleRepository(val context: Application, val BLEFinder: bluetoothLEDevi
                 }
                 return BluetoothResponse.deviceScanResult(ourDevice)
             }
-        }
+        }*/
         return null
     }
-    suspend fun vehicleSetLock(setStatus: Boolean, VID: Int){
+    suspend fun vehicleSetLock(setStatus: Boolean, VID: Int):Pair<opResult?,ErrorType?>{
         var action: GroupBody? = null
         if (setStatus){
             action = GroupBody("enable", arrayListOf(ChangeMemberForm(0,VID)))
         }else{
             action = GroupBody("disable", arrayListOf(ChangeMemberForm(0,VID)))
         }
-        requestSetLockVehicle(action)
+        return requestSetLockVehicle(action)
     }
 
     private suspend fun runAddFriend(actionBody: GroupBody):Pair<opResult?,ErrorType?>{
@@ -161,36 +156,39 @@ class VehicleRepository(val context: Application, val BLEFinder: bluetoothLEDevi
         connectionStatusHandler(result).let { OKResponse ->
             OKResponse.first?.msg?.let { jsonObject ->
                 val results = gson.fromJson(jsonObject, VehicleLockResponse::class.java)
-                findFromScannedList(results.macaddress)?.let {
-                    BLEService?.startConnnection(it)
-                    if (results.VehicleEnable){
-                        //Write to Bluetooth device enable vehicle
-                        Log.i("VehicleRepository","Permission to enable vehicle is granted")
-                    }else{
-                        //Write to Bluetooth device disable vehicle
-                        Log.i("VehicleRepository","Permission to disable vehicle is granted")
-                    }
-                    BLEService?.let { it1 ->
-                        pizeroDevice(it1).writeLockStatus(results.VehicleEnable)
+                val device = ourDevice[results.macaddress]?:findFromScannedList(results.macaddress)
+                device?.lockToggleVehicle()?.let {
+                    when(it){
+                        is BluetoothResponse.characteristicRead ->{
+                            return Pair(opResult.requestLockSuccess(it.msg),null)
+                        }
+                        is BluetoothResponse.connectionFailed->{
+                            return Pair(null,ErrorType.ShowableError("BLEManager",it.msg))
+                        }
+                        else -> {
+                            return Pair(null, ErrorType.ShowableError("SetVehicleLock","Cannot write to device"))
+                        }
                     }
                 }
-
-                //device?.setLockStatus(result.VehicleEnable)
-                return Pair(opResult.requestLockSuccess(),null)
             }
-            return Pair(null, OKResponse.second)
+            OKResponse.second?.let {
+                return Pair(null, it)
+            }
         }
+        return Pair(null,ErrorType.ShowableError("Unknown Error","Some error is not catch"))
     }
 
     suspend fun requestGetLockVehicle(btMac: String):Pair<BluetoothResponse?,ErrorType?>{
-        findFromScannedList(btMac)?.let {
-            BLEService = BLEFinder?.btAdapter?.let { it1 -> pizeroLEService(it1,context) }
-            BLEService?.startConnnection(it)
-            BLEService?.let { it1 ->
-                pizeroDevice(it1).readLockStatus()?.let { it2 ->
-                    return Pair(BluetoothResponse.characteristicRead(it2),null)
+        val device = ourDevice[btMac]?:findFromScannedList(btMac)
+        device?.let {
+            it.checkLockStatus()?.let { status ->
+                when(status){
+                    is BluetoothResponse.connectionFailed -> return Pair(null,ErrorType.ShowableError("BLEFinder",status.msg))
+                    is BluetoothResponse.characteristicRead -> return Pair(BluetoothResponse.characteristicRead(status.msg),null)
+                    else -> return Pair(null,ErrorType.ShowableError("IDK", "Receiving unknown bluetooth response"))
                 }
             }
+            return Pair(null, ErrorType.ShowableError("BLEFinder","Cant read lock status for device: %s".format(btMac)))
         }
         return Pair(null, ErrorType.ShowableError("BLEFinder","Cant find specified device: %s".format(btMac)))
     }
@@ -237,7 +235,7 @@ sealed class opResult{
     class removeError(val errorMsg: String): opResult()
     class transferSuccess: opResult()
     class transferError(val errorMsg: String): opResult()
-    class requestLockSuccess(): opResult()
+    class requestLockSuccess(val latestStatus: Boolean): opResult()
     class bluetoothSearchSuccess(): opResult()
     class bluetoothSearchFailed(): opResult()
     class btSuccesful(val errorMsg: String): opResult()

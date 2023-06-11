@@ -61,7 +61,7 @@ class fragmentVehicleMenu : Fragment() {
 
         ViewModelDialog.liveDataInputResponse.observe(viewLifecycleOwner){
             it?.let { userInput ->
-                lifecycleScope.launch(Dispatchers.IO){
+                lifecycleScope.launch(Dispatchers.Main){
                     ViewModelUser.searchExactUserUID(userInput)?.let {
                         ViewModelVehicle.transferVehicleOwnership(it.UID)
                         val action = fragmentVehicleMenuDirections.actionVehicleMenuFragmentToVehicleFragment()

@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.sisalma.vehicleandusermanagement.databinding.FragmentDaftarVehicleInfoBinding
 import com.sisalma.vehicleandusermanagement.databinding.FragmentVehicleAddSelectionBinding
@@ -16,7 +17,10 @@ import com.sisalma.vehicleandusermanagement.helper.ViewModelUser
 import com.sisalma.vehicleandusermanagement.helper.ViewModelVehicle
 import com.sisalma.vehicleandusermanagement.model.API.ListMemberData
 import com.sisalma.vehicleandusermanagement.model.API.MemberData
+import com.sisalma.vehicleandusermanagement.model.API.VehicleData
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class VehicleAddInfo: Fragment() {
     private val ViewModelVehicle: ViewModelVehicle by activityViewModels()
@@ -29,9 +33,15 @@ class VehicleAddInfo: Fragment() {
         val view = FragmentDaftarVehicleInfoBinding.inflate(inflater, container, false)
         view.btnDaftar.setOnClickListener {
             ViewModelVehicle.selectedMemberData?.let { it1 ->
-                ViewModelUser.addVehicle(it1).let {
-                    val action = VehicleAddInfoDirections.actionVehicleAddSelectionToVehicleFragment()
-                    findNavController().navigate(action)
+                val name = view.editTextTextPersonName.text.toString()
+                val form = VehicleData(it1.VID,it1.UID,it1.BTMacAddress,name)
+                lifecycleScope.launch(Dispatchers.Main) {
+                    ViewModelUser.addVehicle(form).let {
+                        if(it){
+                            val action = VehicleAddInfoDirections.actionVehicleAddSelectionToVehicleFragment()
+                            findNavController().navigate(action)
+                        }
+                    }
                 }
             }
         }

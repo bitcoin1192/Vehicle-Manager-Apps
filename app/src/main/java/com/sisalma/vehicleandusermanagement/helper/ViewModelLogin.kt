@@ -10,6 +10,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.sisalma.vehicleandusermanagement.model.API.LoginRepoResponse
 import com.sisalma.vehicleandusermanagement.model.API.LoginRepository
+import com.sisalma.vehicleandusermanagement.model.API.UserRepoResponse
+import com.sisalma.vehicleandusermanagement.model.API.UserRepository
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flow
@@ -20,6 +22,7 @@ class ViewModelLogin(application: Application) : AndroidViewModel(application) {
     private val app: Application = getApplication()
     private val btMan = app.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private var loginRepository: LoginRepository
+    private val UserRepository = UserRepository(app)
     private val _error: MutableLiveData<ErrorType> = MutableLiveData()
     val error: LiveData<ErrorType> get() = _error
     private lateinit var bleFinder: bluetoothLEDeviceFinder
@@ -31,7 +34,35 @@ class ViewModelLogin(application: Application) : AndroidViewModel(application) {
             loginRepository = LoginRepository(app,viewModelScope,bleFinder.AdapterAddress())
         }
     }
-
+    fun logout() = flow{
+        UserRepository.logout().let {
+            it.first?.let {
+                when(it) {
+                    is UserRepoResponse.loggedOut ->{
+                        emit(true)
+                    }
+                }            }
+            it.second?.let {
+                _error.postValue(it)
+                emit(false)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+    fun loginCheck() = flow{
+        UserRepository.checkCookies().let{
+            it.first?.let {
+                when(it){
+                    is UserRepoResponse.cookiesAccepted -> {
+                        emit(true)
+                    }
+                }
+            }
+            it.second?.let {
+                _error.postValue(it)
+                emit(false)
+            }
+        }
+    }.flowOn(Dispatchers.IO)
     fun requestLogin(user:String,pass:String) = flow {
         loginRepository.doLogin(user,pass).let { result ->
             result.first?.let {

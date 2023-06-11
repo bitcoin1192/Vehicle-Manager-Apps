@@ -48,7 +48,30 @@ class UserRepository(val context: Application) {
         val gg = UserData("","",vehicle.BTMacAddress,vehicle.name)
         return runAddVehicle(UserBody("addVehicle", arrayListOf(gg)))
     }
-
+    suspend fun logout():Pair<UserRepoResponse?,ErrorType?>{
+        val result = endPointService.logout(IntentOnly("logout"))
+        connectionErrorHandler(result).let {
+            it.first?.let {
+                return(Pair(UserRepoResponse.loggedOut(true),null))
+            }
+            it.second?.let {
+                return Pair(null, it)
+            }
+        }
+        return Pair(null,null)
+    }
+    suspend fun checkCookies():Pair<UserRepoResponse?,ErrorType?>{
+        val result = endPointService.cookiesCheck(IntentOnly("cookiesTest"))
+        connectionErrorHandler(result).let {
+            it.first?.let {
+                return(Pair(UserRepoResponse.cookiesAccepted(true),null))
+            }
+            it.second?.let {
+                return Pair(null, it)
+            }
+        }
+        return Pair(null,null)
+    }
     private suspend fun runAddVehicle(vehicle: UserBody):Pair<UserRepoResponse?,ErrorType?>{
         val gson = Gson()
         val result = endPointService.addVehicle(vehicle)
@@ -130,14 +153,16 @@ class UserRepository(val context: Application) {
             }
             is NetworkResponse.ServerError -> {
                 result.body?.let {
-                    return Pair(null,ErrorType.ShowableError("Server Error: ".plus(result.code.toString()),it.errMsg))
+                    return Pair(null,ErrorType.ShowableError("Server Error: ","HTTP %s, %s".format(result.code.toString(),it.errMsg)))
                 }
             }
             is NetworkResponse.NetworkError -> {
                 Log.e("Retrofit-Networking", result.error.toString())
+                return Pair(null,ErrorType.ShowableError("Network Error: ",result.error.toString()))
             }
             is NetworkResponse.UnknownError -> {
                 Log.e("Retrofit-Unknown", result.error.toString())
+                return Pair(null,ErrorType.ShowableError("Unknown Error: ","HTTP %s, %s".format(result.code.toString(),result.body?.errMsg)))
             }
         }
         return Pair(null,null)
@@ -149,4 +174,6 @@ sealed class UserRepoResponse{
     class vehicleFetchSuccess(val result: UserKnownVehicle?): UserRepoResponse()
     class editUserSuccess(val result: UserKnownVehicle): UserRepoResponse()
     class vehicleAddSuccess(val result: Boolean): UserRepoResponse()
+    class cookiesAccepted(val result: Boolean):UserRepoResponse()
+    class loggedOut(val result: Boolean):UserRepoResponse()
 }

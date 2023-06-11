@@ -16,7 +16,6 @@ import com.sisalma.vehicleandusermanagement.databinding.ActivityLauncherBinding
 import com.sisalma.vehicleandusermanagement.helper.*
 import com.sisalma.vehicleandusermanagement.model.API.UserRepository
 import com.sisalma.vehicleandusermanagement.model.API.VehicleRepository
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroLEService
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,7 +31,6 @@ class launcher_activity : AppCompatActivity() {
     val ViewModelDialog: ViewModelDialog by viewModels()
     var btMan: BluetoothManager? = null
     var bleFinder: bluetoothLEDeviceFinder? = null
-    var bleService: pizeroLEService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,7 +55,7 @@ class launcher_activity : AppCompatActivity() {
             bleFinder = bluetoothLEDeviceFinder.getInstance(adapter,this.application)
             //bleService = bluetoothLEService()
             this.lifecycleScope.launch(Dispatchers.IO){
-                bleFinder!!.scanLeDevice("")
+                //bleFinder!!.scanLeDevice("")
             }
             return
         }

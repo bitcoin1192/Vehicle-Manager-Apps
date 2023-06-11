@@ -8,11 +8,15 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattServerCallback
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothStatusCodes
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.sisalma.vehicleandusermanagement.model.BluetoothResponse
+import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
@@ -56,7 +60,7 @@ val appServiceUUID = UUID.fromString("d1a78a60-1ed9-11ed-861d-0242ac120002")
 }*/
 
 //Per device check
-class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
+/*class pizeroLEService(val adapter: BluetoothAdapter, val app:Application, val BLEFinder: bluetoothLEDeviceFinder){
     var permission: Boolean = false
     var deviceName: String? = null
     var blueDev: BluetoothDevice? = null
@@ -72,6 +76,7 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
             ContextCompat.checkSelfPermission(app,Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED)
         ){
             permission = true
+
         }
     }
 
@@ -79,23 +84,27 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
     private val gattCodeCallback = object : BluetoothGattCallback() {
         @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-            if(newState == BluetoothProfile.STATE_CONNECTED) {
-                gatt?.discoverServices()
-                Log.i("LEDiscovery", "Connected to GATT server, discovering services...");
-            } else if(newState == BluetoothProfile.STATE_DISCONNECTED) {
-                Log.i("LEDiscovery", "Disconnected from GATT server");
+            if(status == BluetoothStatusCodes.SUCCESS){
+                if(newState == BluetoothProfile.STATE_CONNECTED) {
+                    gatt?.discoverServices()
+                    Log.i("LEDiscovery", "Connected to GATT server, discovering services...");
+                }else if(newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    gatt?.close()
+                    Log.i("LEDiscovery", "Disconnected from GATT server");
+                }
+            }else{
+                gatt?.close()
             }
             super.onConnectionStateChange(gatt, status, newState)
         }
 
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
-            if(permission){
-                Log.i("pizeroLEService","It's working")
-            }
-            gatt?.let{
-                service = it.services
-                Log.i("pizeroLEService","Service discovered")
+            if(status == BluetoothGatt.GATT_SUCCESS && permission){
+                gatt?.let{
+                    service = it.services
+                    Log.i("pizeroLEService","Service discovered")
+                }
             }
             super.onServicesDiscovered(gatt, status)
         }
@@ -171,7 +180,7 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
         gattConn?.let {
             try {
                 //Wait for service to discovered
-                while (retry <= 40) {
+                while (retry <= 20) {
                     if(it.services.isNotEmpty()){
                         Log.i("LEDiscovery", "Found %s Service".format(it.services.size.toString()))
                         it.services.forEach{
@@ -215,7 +224,7 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
                 //Wait for service to discovered
                 }
             catch(e: IllegalAccessError){ }
-                        }
+        }
         return ByteArray(0)
     }
 
@@ -292,32 +301,42 @@ class pizeroLEService(val adapter: BluetoothAdapter, val app:Application){
         runBlocking { delay(300) }
     }
     @SuppressLint("MissingPermission")
-    fun startConnnection(bleDev: BluetoothDevice){
-            blueDev = bleDev
-            blueDev?.let {
-                gattConn = it.connectGatt(app,false,gattCodeCallback,BluetoothDevice.TRANSPORT_LE)
+    suspend fun startConnnection(macaddress:String):Boolean{
+        BLEFinder.scanLeDevice(macaddress).let {
+            when(it){
+                is BluetoothResponse.deviceScanResult->{
+                    it.devices[macaddress]?.let {
+                        blueDev = it
+                        gattConn = it.connectGatt(app,false,gattCodeCallback,BluetoothDevice.TRANSPORT_LE)
+                        gattConn
+                        return true
+                    }
+                }
+                else -> {
+                    return false
+                }
             }
-
+        }
+        return false
     }
-}
+}*/
 
-class pizeroDevice(val service: pizeroLEService ){
-
-    fun writeLockStatus(status: Boolean){
+/*class pizeroDevice(val service: bluetoothLEDeviceFinder.pizeroLEService){
+    suspend fun writeLockStatus(status: Boolean){
         val gattserv = service.getServiceByUUID(statusCharacteristicUUID)
         gattserv?.let { services ->
             services.characteristics.let { characteristicsList ->
                 characteristicsList?.get(0)?.let {
                     if(status){
-                        val writeData = service.writeServiceCharacteristics(services, it,"u")
-                    }else{
                         val writeData = service.writeServiceCharacteristics(services, it,"a")
+                    }else{
+                        val writeData = service.writeServiceCharacteristics(services, it,"u")
                     }
                 }
             }
         }
     }
-    fun readLockStatus():Boolean? {
+    suspend fun readLockStatus():Boolean? {
         val gattserv = service.getServiceByUUID(statusCharacteristicUUID)
         var message: String = ""
         gattserv?.let { services ->
@@ -348,4 +367,4 @@ class pizeroDevice(val service: pizeroLEService ){
         }
         return null
     }
-}
+}*/

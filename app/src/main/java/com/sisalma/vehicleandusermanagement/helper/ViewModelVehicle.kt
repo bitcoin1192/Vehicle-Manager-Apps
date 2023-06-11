@@ -6,8 +6,7 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.*
 import com.sisalma.vehicleandusermanagement.model.API.*
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroDevice
-import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroLEService
+//import com.sisalma.vehicleandusermanagement.model.BLEStuff.pizeroDevice
 import com.sisalma.vehicleandusermanagement.model.BluetoothResponse
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import com.sisalma.vehicleandusermanagement.view.memberDataWrapper
@@ -19,7 +18,6 @@ import kotlinx.coroutines.launch
 class ViewModelVehicle(application: Application): AndroidViewModel(application) {
     private val btMan = getApplication<Application>().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     lateinit var bleFinder : bluetoothLEDeviceFinder
-    lateinit var bleService : pizeroLEService
     var vehicleRepository: VehicleRepository
 
     var selectedMemberData: VehicleData? = null
@@ -44,33 +42,25 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
     private var Data: VehicleData? = null
     init{
         vehicleRepository = VehicleRepository(getApplication(),null)
-        btMan.adapter?.let { adapter ->
-            Log.i("ViewModelVehicle","Bluetooth Adapter is found !")
-            bleFinder = bluetoothLEDeviceFinder.getInstance(adapter,getApplication())
-            bleService = pizeroLEService(adapter,application)
-            if (bleFinder.permissionFlag == true){
-                viewModelScope.launch(Dispatchers.IO){
-                    bleFinder.scanLeDevice("")
-                    vehicleRepository = VehicleRepository(getApplication(),bleFinder)
-                }
-            }else{
-                _bluetoothRequest.value = vehicleOperationRequest.bluetoothPermisionRequest()
-            }
-        }
+        reloadBtAdapter()
     }
     fun reloadBtAdapter(){
         btMan.adapter?.let { adapter ->
-            bleFinder = bluetoothLEDeviceFinder.getInstance(adapter,getApplication())
-            bleFinder.checkPermission(getApplication())
-            if (bleFinder.permissionFlag){
-                Log.i("ViewVehicle",bleFinder.AdapterAddress().dropLast(3)+"IA")
-                viewModelScope.launch(Dispatchers.IO){
-                    bleFinder.scanLeDevice("")
-                    vehicleRepository = VehicleRepository(getApplication(),bleFinder)
+            adapter.bluetoothLeScanner?.let {
+                bleFinder = bluetoothLEDeviceFinder.getInstance(adapter,getApplication())
+                bleFinder.checkPermission(getApplication())
+                if (bleFinder.permissionFlag){
+                    Log.i("ViewVehicle",bleFinder.AdapterAddress().dropLast(3)+"IA")
+                    viewModelScope.launch(Dispatchers.IO){
+                        //bleFinder.findOurDevice("")
+                        vehicleRepository = VehicleRepository(getApplication(),bleFinder)
+                    }
+                }else{
+                    Log.i("BLEFinder", "Permission Error")
                 }
-            }else{
-                Log.i("BLEFinder", "Permission Error")
+                return
             }
+            _bluetoothRequest.value = vehicleOperationRequest.bluetoothEnableRequest()
         }
     }
     private fun showError(errorType: ErrorType){
@@ -140,18 +130,39 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
     }
     //Below this line, all function require bluetooth le to connect to Pi-Zero
     fun setDeviceLockStatus(lock: Boolean){
-        //TODO("Function to set lock status of vehicle in order to control vehicle electric system via bluetooth")
-        viewModelScope.launch(Dispatchers.IO) {
-            _currentVehicleLockStatus.value?.let {
-                if (it == true){
-                    vehicleRepository.vehicleSetLock(it,selectedVID)
-                    _currentVehicleLockStatus.postValue(false)
-                }else{
-                    vehicleRepository.vehicleSetLock(it,selectedVID)
-                    _currentVehicleLockStatus.postValue(true)
+        Data?.let {
+            viewModelScope.launch(Dispatchers.IO) {
+                vehicleRepository.vehicleSetLock(false,selectedVID).let {
+                    it.first?.let {
+                        when(it){
+                            is opResult.requestLockSuccess->{
+                                _currentVehicleLockStatus.postValue(it.latestStatus)
+                            }
+                        }
+                    }
+                    it.second?.let {
+                        _error.postValue(it)
+                    }
                 }
+                /*vehicleRepository.requestGetLockVehicle(it.BTMacAddress).let { LockResponse ->
+                    LockResponse.first?.let {
+                        when(it){
+                            is BluetoothResponse.characteristicRead ->{
+                                it.msg.let {
+                                    vehicleRepository.vehicleSetLock(!it,selectedVID).let {
+                                        _currentVehicleLockStatus.postValue(false)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    LockResponse.second?.let {
+                        _error.postValue(it)
+                    }
+                }*/
             }
         }
+        //TODO("Function to set lock status of vehicle in order to control vehicle electric system via bluetooth")
     }
 
     fun setVID(VID: Int){
@@ -166,10 +177,10 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
     fun getNearbyDevice()= flow<ListVehicleData>{
         val result = vehicleRepository.findNearbyDevice()
         when(result){
-            is BluetoothResponse.deviceScanResult->{
+            is BluetoothResponse.deviceResult->{
                 val list: MutableList<VehicleData> = arrayListOf()
                 result.devices.forEach{
-                    list.add(VehicleData(0,0,it.address.toString(),""))
+                    list.add(VehicleData(0,0,it.value.bluetoothDevice?.address.toString(),""))
                 }
                 emit(ListVehicleData(list))
             }
@@ -184,6 +195,7 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
                         when(it){
                             is BluetoothResponse.characteristicRead->{
                                 _currentVehicleLockStatus.postValue(it.msg)
+                                _error.postValue(ErrorType.ShowableError("Connection Status","You're connected"))
                             }
                         }
                     }

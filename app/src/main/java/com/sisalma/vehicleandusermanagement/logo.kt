@@ -9,11 +9,15 @@ import android.view.WindowManager
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.sisalma.vehicleandusermanagement.databinding.FragmentLogoBinding
+import com.sisalma.vehicleandusermanagement.helper.ViewModelLogin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 /**
@@ -21,6 +25,7 @@ import kotlinx.coroutines.launch
  * status bar and navigation/system bar) with user interaction.
  */
 class logo : Fragment() {
+    val ViewModelLogin by activityViewModels<ViewModelLogin>()
     private val hideHandler = Handler()
 
     /**
@@ -40,20 +45,20 @@ class logo : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-
+        lifecycleScope.launch(Dispatchers.Main){
+            ViewModelLogin.loginCheck().collect(){
+                if(it){
+                    findNavController().navigate(R.id.action_logo_to_vehicleFragment)
+                }else{
+                    findNavController().navigate(R.id.action_logo_to_loginFragment)
+                }
+            }
+        }
         _binding = FragmentLogoBinding.inflate(inflater, container, false)
         return binding.root
-
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        GlobalScope.launch(Dispatchers.Main) {
-            delay(1000).run {
-                findNavController().navigate(R.id.action_logo_to_loginFragment)
-            }
-        }
-
-
     }
 }

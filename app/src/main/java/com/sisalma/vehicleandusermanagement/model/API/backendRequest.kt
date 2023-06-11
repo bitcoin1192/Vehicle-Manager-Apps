@@ -42,14 +42,17 @@ interface BackendService {
 interface UserBackend {
     @POST("userOps")
     suspend fun getKnownVehicle(@Body body: IntentOnly): NetworkResponse<ResponseSuccess, ResponseError>
-
     @POST("userOps")
     suspend fun editUserData(@Body body: UserBody): NetworkResponse<ResponseSuccess, ResponseError>
-
     @POST("userOps")
     suspend fun searchUserUID(@Body body: UserBody): NetworkResponse<ResponseSuccess, ResponseError>
     @POST("userOps")
     suspend fun addVehicle(@Body body: UserBody): NetworkResponse<ResponseSuccess, ResponseError>
+    @POST("userOps")
+    suspend fun cookiesCheck(@Body body: IntentOnly): NetworkResponse<ResponseSuccess, ResponseError>
+    @POST("userOps")
+    suspend fun logout(@Body body: IntentOnly): NetworkResponse<ResponseSuccess, ResponseError>
+
 }
 
 interface VehicleBackend {
@@ -84,7 +87,6 @@ class APIEndpoint private constructor(){
         // reads a field will see the most recently written value
         @Volatile private var api: APIEndpoint? = null
         fun getInstance(context: Application) = api ?: synchronized(this){
-
             api ?: APIEndpoint().also {
                 it.cookieJar = CustomCookies(SetCookieCache(),SharedPrefsCookiePersistor(context))
                 api = it
@@ -92,8 +94,8 @@ class APIEndpoint private constructor(){
         }
     }
 
-    //val BASE_URL = "https://dev-api.sisalma.com/"
-    val BASE_URL = "http://192.168.30.250:8080/"
+    val BASE_URL = "https://dev-api.sisalma.com/"
+    //val BASE_URL = "http://192.168.30.250:8080/"
     //val BASE_URL = "http://192.168.137.1:8080/"
     //val BASE_URL = "http://10.21.159.239:5000/"
     lateinit var cookieJar: CustomCookies

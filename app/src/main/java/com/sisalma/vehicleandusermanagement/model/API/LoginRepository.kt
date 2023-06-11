@@ -74,6 +74,9 @@ class LoginRepository(context: Application, scope:CoroutineScope, macadress: Str
             }
         }
     }
+    suspend fun doCheckCookies():Pair<LoginRepoResponse?,ErrorType?>{
+        return Pair(null,ErrorType.LogableError("LoginRepository","Cookies in not valid, do login first !"))
+    }
 }
 
 sealed class LoginRepoResponse{

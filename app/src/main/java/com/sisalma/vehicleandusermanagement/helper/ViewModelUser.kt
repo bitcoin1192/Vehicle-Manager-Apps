@@ -87,8 +87,8 @@ class ViewModelUser(App: Application): AndroidViewModel(App) {
         }
         return null
     }
-    fun addVehicle(vehicle: VehicleData): Boolean{
-        runBlocking { return@runBlocking userRepo.addVehicle(vehicle) }.let {
+    suspend fun addVehicle(vehicle: VehicleData): Boolean{
+        userRepo.addVehicle(vehicle).let {
             it.first?.let {
                 when(it){
                     is UserRepoResponse.vehicleAddSuccess ->{
@@ -103,6 +103,9 @@ class ViewModelUser(App: Application): AndroidViewModel(App) {
                 _error.postValue(it)
             }
         }
+        /*runBlocking { return@runBlocking userRepo.addVehicle(vehicle) }.let {
+
+        }*/
         return false
     }
 }

@@ -8,19 +8,24 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.*
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.sisalma.vehicleandusermanagement.R
 import com.sisalma.vehicleandusermanagement.databinding.FragmentVehicleListBinding
+import com.sisalma.vehicleandusermanagement.helper.ViewModelLogin
 import com.sisalma.vehicleandusermanagement.helper.ViewModelUser
 import com.sisalma.vehicleandusermanagement.helper.ViewModelVehicle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 /**
  * A fragment representing a list of Items.
  */
 class VehicleFragment : Fragment() {
     val ViewModelUser: ViewModelUser by activityViewModels()
-    val ViewModelVehicle: ViewModelVehicle by activityViewModels()
+    val ViewModelLogin: ViewModelLogin by activityViewModels()
     lateinit var VehicleListAdapter: VehicleListFragmentHolder
 
     override fun onCreateView(
@@ -58,14 +63,18 @@ class VehicleFragment : Fragment() {
             }
             R.id.accountLogout -> {
                 ViewModelUser.clearResponse()
-                findNavController().navigate(action)
+                lifecycleScope.launch(Dispatchers.Main){
+                    ViewModelLogin.logout().collect {
+                        if (it){
+                            findNavController().navigate(action)
+                        }
+                    }
+                }
                 return true
             }
         }
         return false
     }
-
-
     private fun accessVehicleAddition(){
         val action = VehicleFragmentDirections.actionVehicleFragmentToVehicleAddSelection()
         findNavController().navigate(action)
