@@ -36,10 +36,9 @@ class VehicleDeviceManager(context: Application): BleManager(context) {
         }
         return false
     }
-
-    override fun initialize() {
-        requestMtu(210).enqueue()
-    }
+    /*override fun initialize() {
+        requestMtu(517).enqueue()
+    }*/
 
     override fun onServicesInvalidated() {
         lockCharacteristic = null

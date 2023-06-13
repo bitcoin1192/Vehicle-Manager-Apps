@@ -185,11 +185,11 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
                 emit(ListVehicleData(list))
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(Dispatchers.Unconfined)
 
     fun connectDevice(){
         Data?.let {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(Dispatchers.Unconfined) {
                 vehicleRepository.requestGetLockVehicle(it.BTMacAddress).let{
                     it.first?.let {
                         when(it){

@@ -37,7 +37,7 @@ class bluetoothLEDeviceFinder private constructor(){
     lateinit var btAdapter: BluetoothAdapter
     var btAdapterAddress: String? = null
     @Volatile var scanning = false
-    private val SCAN_PERIOD = 3000L
+    private val SCAN_PERIOD = 1500L
     private lateinit var context: Application
 
     companion object{
@@ -148,7 +148,7 @@ class bluetoothLEDeviceFinder private constructor(){
                     scanResultInternal[address]?.let {
                         val device = VehicleDeviceManager(context)
                         try {
-                            device.connect(it).retry(20,100).timeout(10000).fail{_,code->Log.i("BLEFail","code %s".format(code.toString()))}.suspend()
+                            device.connect(it).retry(3,1200).useAutoConnect(false).timeout(7000).suspend()
                             device.serviceList?.let {
                                 device.lockCharacteristic?.let {
                                     serviceResult[address] = device
@@ -159,10 +159,10 @@ class bluetoothLEDeviceFinder private constructor(){
                             throw java.lang.Exception("device connected but no servicelist")
                         }catch(e:java.lang.Exception){
                             Log.i("BleConnect","%s is not our device, skipping".format(device.bluetoothDevice?.address))
-                            device.let {
+                            /*device.let {
                                 device.disconnect()
                                 device.close()
-                            }
+                            }*/
                         }
                     }
                 }
