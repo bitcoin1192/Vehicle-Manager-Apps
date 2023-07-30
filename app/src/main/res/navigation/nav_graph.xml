@@ -12,9 +12,7 @@
         tools:layout="@layout/fragment_login">
         <action
             android:id="@+id/action_loginFragment_to_daftarFragment"
-            app:destination="@id/daftarFragment"
-            app:enterAnim="@android:anim/fade_in"
-            app:exitAnim="@android:anim/fade_out" />
+            app:destination="@id/daftarFragment" />
         <action
             android:id="@+id/action_loginFragment_to_vehicleFragment"
             app:destination="@id/vehicleFragment" />
@@ -25,11 +23,6 @@
         android:label="daftarFragment"
         tools:layout="@layout/fragment_daftar">
         <action
-            android:id="@+id/action_daftarFragment_to_loginFragment"
-            app:destination="@id/loginFragment"
-            app:enterAnim="@android:anim/fade_in"
-            app:exitAnim="@android:anim/fade_out" />
-        <action
             android:id="@+id/action_daftarFragment_to_vehicleFragment"
             app:destination="@id/vehicleFragment" />
     </fragment>
@@ -39,17 +32,27 @@
         android:label="fragment_item_list"
         tools:layout="@layout/fragment_vehicle_list" >
         <action
-            android:id="@+id/action_vehicleFragment_to_vehicleEdit"
-            app:destination="@id/vehicleEdit" />
+            android:id="@+id/action_vehicleFragment_to_vehicle_menu_fragment"
+            app:destination="@id/VehicleMenuFragment" />
+        <action
+            android:id="@+id/action_vehicleFragment_to_vehicle_add_selection"
+            app:destination="@id/vehicle_add_selection" />
+        <action
+            android:id="@+id/action_vehicleFragment_to_logo"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
     </fragment>
     <fragment
-        android:id="@+id/vehicleEdit"
-        android:name="com.sisalma.vehicleandusermanagement.view.VehicleFragment"
+        android:id="@+id/vehicleEditFragment"
+        android:name="com.sisalma.vehicleandusermanagement.view.VehicleEdit"
         android:label="fragment_item_list"
         tools:layout="@layout/fragment_vehicle_edit" >
         <action
             android:id="@+id/action_vehicleEdit_to_vehicleFragment"
-            app:destination="@id/vehicleFragment" />
+            app:destination="@id/vehicleFragment"
+            app:popUpTo="@id/vehicleFragment"
+            app:popUpToInclusive="true" />
     </fragment>
     <fragment
         android:id="@+id/logo"
@@ -59,6 +62,48 @@
         <action
             android:id="@+id/action_logo_to_loginFragment"
             app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_logo_to_vehicleFragment"
+            app:destination="@id/vehicleFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/vehicle_add_selection"
+        android:name="com.sisalma.vehicleandusermanagement.vehicle_add_selection"
+        android:label="fragment_vehicle_add_selection"
+        tools:layout="@layout/fragment_vehicle_add_selection" >
+        <action
+            android:id="@+id/action_vehicle_add_selection_to_vehicle_add_info"
+            app:destination="@id/vehicle_add_info" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/vehicle_add_info"
+        android:name="com.sisalma.vehicleandusermanagement.view.VehicleAddInfo"
+        android:label="fragment_vehicle_add_info"
+        tools:layout="@layout/fragment_daftar_vehicle_info">
+        <action
+            android:id="@+id/action_vehicle_add_selection_to_vehicleFragment"
+            app:destination="@id/vehicleFragment"
+            app:popUpTo="@id/vehicleFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+    <fragment
+        android:id="@+id/VehicleMenuFragment"
+        android:name="com.sisalma.vehicleandusermanagement.fragmentVehicleMenu"
+        android:label="VehicleMenuFragment"
+        tools:layout="@layout/fragment_vehicle_menu" >
+        <action
+            android:id="@+id/action_VehicleMenuFragment_to_vehicleEditFragment"
+            app:destination="@id/vehicleEditFragment" />
+        <argument
+            android:name="VID"
+            app:argType="integer"
+            android:defaultValue="0" />
+        <action
+            android:id="@+id/action_VehicleMenuFragment_to_vehicleFragment"
+            app:destination="@id/vehicleFragment"
+            app:popUpTo="@id/vehicleFragment"
+            app:popUpToInclusive="true" />
     </fragment>
 
 </navigation>

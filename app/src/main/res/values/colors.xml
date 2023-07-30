@@ -1,19 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!--?xml version="1.0" encoding="UTF-8"?-->
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="button_positive">#2196F3</color>
-    <color name="button_positive_hold">#03A9F4</color>
-    <color name="button_negative">#292A50</color>
-    <color name="button_negative_hold">#292A50</color>
-    <color name="light_blue_600">#FF039BE5</color>
-    <color name="light_blue_900">#FF01579B</color>
-    <color name="light_blue_A200">#FF40C4FF</color>
-    <color name="light_blue_A400">#FF00B0FF</color>
-    <color name="black_overlay">#66000000</color>
+        <color name="primaryColor">#42a5f5</color>
+        <color name="primaryLightColor">#80d6ff</color>
+        <color name="primaryDarkColor">#0077c2</color>
+        <color name="secondaryColor">#512da8</color>
+        <color name="secondaryLightColor">#8559da</color>
+        <color name="secondaryDarkColor">#140078</color>
+        <color name="primaryTextColor">#212121</color>
+        <color name="secondaryTextColor">#ffffff</color>
+    <color name="backgroundLight">#F8F1F1</color>
+    <color name="backgroundDark">#000000</color>
 </resources>

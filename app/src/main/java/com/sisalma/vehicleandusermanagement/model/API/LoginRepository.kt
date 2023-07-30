@@ -1,5 +1,6 @@
 package com.sisalma.vehicleandusermanagement.model.API
 
+import android.app.Application
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
@@ -8,67 +9,79 @@ import androidx.lifecycle.lifecycleScope
 import com.haroldadmin.cnradapter.NetworkResponse
 import com.sisalma.vehicleandusermanagement.helper.ErrorType
 import com.sisalma.vehicleandusermanagement.helper.ViewModelError
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class LoginRepository(context: AppCompatActivity, ViewModelError: ViewModelError) {
-    private var username = ""
-    private var password = ""
-    private var _response: MutableLiveData<NetworkResponse<LoginResponse, ResponseError>> = MutableLiveData()
-    val response: LiveData<NetworkResponse<LoginResponse, ResponseError>> get() = _response
-    private val ViewModelError = ViewModelError
-    private val loginService = APIEndpoint(context).loginService
-    private val conteks = context
-
-    fun doSignUp(){
-        val actionBody = LoginBody("signup",this.username,this.password)
-        runLoginEndpoint(actionBody)
+class LoginRepository(context: Application, scope:CoroutineScope, macadress: String?) {
+    private val loginService = APIEndpoint.getInstance(context).loginService
+    private var macaddress: String = "01:00:00:00:00:00"
+    init {
+        macadress?.let {
+            this.macaddress = it
+        }
     }
-
-    fun doLogin(){
-        val actionBody = LoginBody("login",this.username,this.password)
-        runLoginEndpoint(actionBody)
-    }
-
-    private fun runLoginEndpoint(actionBody: LoginBody){
-        conteks.lifecycleScope.launch(Dispatchers.IO){
-            val result = loginService.loginEndpoint(actionBody)
-            var stopResponse = false
-            when(result){
-                is NetworkResponse.ServerError ->{
-                    Log.e("Server Error", "${result.error}")
-                    ViewModelError.setError(
-                        ErrorType.ShowableError(result.error.toString(),result.code.toString())
-                    )
-                    stopResponse = false
-                }
-                is NetworkResponse.NetworkError->{
-                    Log.e("Network Error", "${result.error.message}")
-                    result.body?.let {
-                        ErrorType.LogableError(result.error.toString(),
-                            it.errmsg)
-                    }?.let {
-                        ViewModelError.setError(
-                            it
-                        )
-                    }
-                    stopResponse = false
-                }
-                is NetworkResponse.UnknownError ->{
-                    Log.e("Unknown Error", "Something weird with the device")
-                    stopResponse = true
-                }
-
+    suspend fun doSignUp(user: String,pass: String, simnumber:String): Pair<LoginRepoResponse?,ErrorType?>{
+        val actionBody = LoginBody("signup",user,pass, this.macaddress, simnumber)
+        return when(val result = loginService.loginEndpoint(actionBody)){
+            is NetworkResponse.Success->{
+                Pair(LoginRepoResponse.SignupSuccess("User is Signed Up"),null)
             }
-            if(!stopResponse){
-                _response.postValue(result)
+            is NetworkResponse.ServerError->{
+                Pair(null, result.body?.let {
+                    ErrorType.ShowableError("LoginRepository", it.errMsg) }
+                )
             }
+            is NetworkResponse.NetworkError->{
+                Log.e("Retrofit-Networking", result.error.toString())
+                Pair(null, result.toString().let {
+                    ErrorType.LogableError("LoginRepository", it)
+                })
+            }
+            is NetworkResponse.UnknownError-> {
+                Log.e("LoginRepository",result.error.toString())
+                Pair(null,null)
+            }
+            /*else -> {
+                Pair(null, result.toString().let {
+                    ErrorType.ShowableError("LoginRepository", it)
+                }
+                )
+            }*/
         }
     }
 
-    fun setUser(user: String, pass: String){
-        this.username = user
-        this.password = pass
-        Log.i("LoginRepos","user pass is ${this.password}")
+    suspend fun doLogin(user: String,pass: String): Pair<LoginRepoResponse?,ErrorType?>{
+        val actionBody = LoginBody("login",user,pass, this.macaddress,null)
+        return when(val result = loginService.loginEndpoint(actionBody)){
+            is NetworkResponse.Success->{
+                Pair(LoginRepoResponse.LoginSuccess("User is Logged in"),null)
+            }
+            is NetworkResponse.ServerError->{
+                Pair(null, result.body?.let {
+                    ErrorType.ShowableError("LoginRepository", it.errMsg) }
+                )
+            }
+            is NetworkResponse.NetworkError->{
+                Log.e("Retrofit-Networking", result.error.toString())
+                Pair(null, result.toString().let {
+                    ErrorType.ShowableError("LoginRepository", it)
+                })
+            }
+            is NetworkResponse.UnknownError-> {
+                Log.e("LoginRepository",result.error.toString())
+                Pair(null,null)
+            }
+        }
     }
+    suspend fun doCheckCookies():Pair<LoginRepoResponse?,ErrorType?>{
+        return Pair(null,ErrorType.LogableError("LoginRepository","Cookies in not valid, do login first !"))
+    }
+}
+
+sealed class LoginRepoResponse{
+    class LoginSuccess(val result: String): LoginRepoResponse()
+    class SignupSuccess(val result: String): LoginRepoResponse()
+    class LoginFailed(val result: String): LoginRepoResponse()
+    class SignupFailed(val result: String): LoginRepoResponse()
 }

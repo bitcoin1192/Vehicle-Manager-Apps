@@ -5,8 +5,8 @@
     android:id="@+id/elev"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:backgroundTint="?android:attr/colorPressedHighlight"
     android:orientation="horizontal"
-    app:cardBackgroundColor="@color/white"
     app:cardCornerRadius="2dp"
     app:cardElevation="5dp"
     app:cardMaxElevation="1dp"
@@ -14,7 +14,8 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent">
 
         <ImageView
             android:id="@+id/VehicleTypeImage"

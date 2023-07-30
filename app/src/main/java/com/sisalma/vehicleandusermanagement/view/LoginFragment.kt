@@ -5,37 +5,21 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.sisalma.vehicleandusermanagement.R
 import com.sisalma.vehicleandusermanagement.databinding.FragmentLoginBinding
-import com.sisalma.vehicleandusermanagement.helper.ResponseState
 import com.sisalma.vehicleandusermanagement.helper.ViewModelLogin
+import com.sisalma.vehicleandusermanagement.model.API.LoginRepoResponse
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [loginFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class loginFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
     private val ViewModelLogin: ViewModelLogin by activityViewModels<ViewModelLogin>()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
-
+    private var backPressCounter = 0
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -43,47 +27,41 @@ class loginFragment : Fragment() {
         // Inflate the layout for this fragment
         val view = FragmentLoginBinding.inflate(inflater,container,false)
         view.btnLogin.setOnClickListener {
-            ViewModelLogin.setCurrentUser(view.editTextTextPersonName.text.toString(),
-                view.editTextTextPassword.text.toString())
-            ViewModelLogin.loginAction()
+            lifecycleScope.launch(Dispatchers.Main){
+                ViewModelLogin.requestLogin(
+                    view.editTextTextPersonName.text.toString(),
+                    view.editTextTextPassword.text.toString()
+                ).collect{
+                    when(it){
+                        is LoginRepoResponse.LoginSuccess -> {
+                            findNavController().navigate(R.id.action_loginFragment_to_vehicleFragment)
+                        }
+                        is LoginRepoResponse.LoginFailed -> {
+                            view.textView.text = it.result
+                        }
+                    }
+                }
+            }
         }
+
+        val backpresscall = requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner){
+            if (backPressCounter >= 1){
+                requireActivity().let {
+                    backPressCounter = 0
+                    it.finish()
+                }
+            }else{
+                Toast.makeText(this@loginFragment.context,"Press back once more to exit", Toast.LENGTH_SHORT).show()
+            }
+            backPressCounter++
+        }
+
+        backpresscall.isEnabled = true
+
         view.btnDaftar.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_daftarFragment)
         }
 
-        ViewModelLogin.response.observe(viewLifecycleOwner,{ response ->
-            view.textView.text = response
-        })
-        ViewModelLogin.status.observe(viewLifecycleOwner,{
-            when(it){
-                is ResponseState.isSuccess->{
-                    findNavController().navigate(R.id.action_loginFragment_to_vehicleFragment)
-                }
-                is ResponseState.isError->{
-                    view.textView.text = it.errorMsg
-                }
-            }
-        })
         return view.root
-    }
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment loginFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            loginFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
     }
 }

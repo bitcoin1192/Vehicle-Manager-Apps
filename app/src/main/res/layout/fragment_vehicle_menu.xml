@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+    <ImageView
+        android:id="@+id/imgKunci"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="64dp"
+        android:layout_marginTop="128dp"
+        android:src="@drawable/ic_baseline_lock_120"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textKunci"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Lock/Unlock"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="@+id/imgKunci"
+        app:layout_constraintStart_toStartOf="@+id/imgKunci"
+        app:layout_constraintTop_toBottomOf="@+id/imgKunci" />
+
+    <ImageView
+        android:id="@+id/imgEditUser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="128dp"
+        android:layout_marginEnd="64dp"
+        android:src="@drawable/ic_baseline_people_120"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <TextView
+        android:id="@+id/textEditUser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Edit User"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="@+id/imgEditUser"
+        app:layout_constraintStart_toStartOf="@+id/imgEditUser"
+        app:layout_constraintTop_toBottomOf="@+id/imgEditUser" />
+
+    <ImageView
+        android:id="@+id/imgTransfer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="348dp"
+        android:src="@drawable/ic_baseline_compare_arrows_120"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textTransfer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Transfer Ownership"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="@+id/imgTransfer"
+        app:layout_constraintStart_toStartOf="@+id/imgTransfer"
+        app:layout_constraintTop_toBottomOf="@+id/imgTransfer" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
