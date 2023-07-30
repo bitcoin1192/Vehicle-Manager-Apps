@@ -17,6 +17,7 @@ import no.nordicsemi.android.ble.ktx.suspendForResponse
 import no.nordicsemi.android.ble.ktx.suspendForValidResponse
 import no.nordicsemi.android.ble.response.ReadResponse
 import no.nordicsemi.android.ble.response.WriteResponse
+import java.time.Instant
 
 class VehicleDeviceManager(context: Application): BleManager(context) {
     var serviceList: BluetoothGattService? = null
@@ -70,16 +71,24 @@ class VehicleDeviceManager(context: Application): BleManager(context) {
     }
     suspend fun lockToggleVehicle():BluetoothResponse?{
         var msg = ""
+        var timeStart: Long? = null
+        var timeEnd: Long? = null
         lockCharacteristic?.let {
             try {
+                //TODO(Menghitung total operasi baca dan tulis ke alat)
+                timeStart = Instant.now().toEpochMilli()
                 checkCurrentLockStatus()?.let {lockStatus ->
                     if(lockStatus){
                         val writeResult = writeCharacteristic(lockCharacteristic,"a".toByteArray(),BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT).suspendForResponse<WriteResponse>()
                     }else{
                         val writeResult = writeCharacteristic(lockCharacteristic,"u".toByteArray(),BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT).suspendForResponse<WriteResponse>()
                     }
+                    timeEnd = Instant.now().toEpochMilli()
+                    val result = timeEnd!!-timeStart!!
+                    Log.i("TimeCounter","Read to write time: %s".format(result.toString()))
                     return BluetoothResponse.characteristicRead(!lockStatus)
                 }
+
             }catch (e:RequestFailedException){
                 return BluetoothResponse.connectionFailed("Check if device is powered !")
             }

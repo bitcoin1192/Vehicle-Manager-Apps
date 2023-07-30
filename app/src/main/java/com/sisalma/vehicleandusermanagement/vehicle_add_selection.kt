@@ -19,6 +19,7 @@ import com.sisalma.vehicleandusermanagement.model.API.MemberData
 import com.sisalma.vehicleandusermanagement.view.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 class vehicle_add_selection : Fragment() {
     private val ViewModelUser: ViewModelUser by activityViewModels()
@@ -31,11 +32,20 @@ class vehicle_add_selection : Fragment() {
         val view = FragmentVehicleAddSelectionBinding.inflate(inflater, container, false)
         view.bluetoothDeviceRCView.adapter = EmptyDataPage("Searching for devices, please wait!",null)
         lifecycleScope.launch(Dispatchers.Main){
+            var timeStart: Long? = null
+            var timeEnd: Long? = null
+            timeStart = Instant.now().toEpochMilli()
             ViewModelVehicle.getNearbyDevice().collect{
                 Log.i("Test","Bluetooth Scanning finish.")
                 if (it.VehicleData.isEmpty()){
+                    timeEnd = Instant.now().toEpochMilli()
+                    val result = timeEnd!!-timeStart!!
+                    Log.i("TimeCounter","Scan Gagal dalam %s milidetik".format(result.toString()))
                     view.bluetoothDeviceRCView.adapter = EmptyDataPage("No device is found, sorry!",null)
                 }else{
+                    timeEnd = Instant.now().toEpochMilli()
+                    val result = timeEnd!!-timeStart!!
+                    Log.i("TimeCounter","Scan berhasil dalam %s milidetik".format(result.toString()))
                     view.bluetoothDeviceRCView.adapter = VehicleBTListRCViewAdapter(it){
                         val action = vehicle_add_selectionDirections.actionVehicleAddSelectionToVehicleAddInfo()
                         when(it){

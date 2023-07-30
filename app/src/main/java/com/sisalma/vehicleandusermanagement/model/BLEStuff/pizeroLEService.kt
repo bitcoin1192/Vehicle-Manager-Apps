@@ -26,7 +26,7 @@ val genericAttUUID = UUID.fromString("00001801-0000-1000-8000-00805f9b34fb")
 val deviceInfoUUID = UUID.fromString("0000180a-0000-1000-8000-00805f9b34fb")
 
 val customUUIDOne = UUID.fromString("d1a7938e-1ed9-11ed-861d-0242ac120002")
-val lockCharacteristicUUID = UUID.fromString("d1a79212-1ed9-11ed-861d-0242ac120002")
+val lockCharacteristicUUID: UUID = UUID.fromString("d1a79212-1ed9-11ed-861d-0242ac120002")
 val statusCharacteristicUUID = UUID.fromString("d1a79000-1ed9-11ed-861d-0242ac120002")
 val appServiceUUID = UUID.fromString("d1a78a60-1ed9-11ed-861d-0242ac120002")
 

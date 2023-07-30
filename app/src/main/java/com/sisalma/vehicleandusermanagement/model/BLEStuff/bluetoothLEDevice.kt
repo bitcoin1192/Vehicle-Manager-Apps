@@ -115,6 +115,7 @@ class bluetoothLEDeviceFinder private constructor(){
     }
     private val setting = ScanSettings.Builder().setScanMode(SCAN_MODE_LOW_LATENCY).setCallbackType(
         CALLBACK_TYPE_ALL_MATCHES).build()
+    private var isScanMacaddess = false
     @SuppressLint("MissingPermission")
     private suspend fun scanLeDevice(macaddress: String?): BluetoothResponse {
         if(permissionFlag && btAdapter.isEnabled) {
@@ -128,8 +129,10 @@ class bluetoothLEDeviceFinder private constructor(){
                             val filter = arrayListOf<ScanFilter>(
                                 ScanFilter.Builder().setDeviceAddress(it).build()
                             )
+                            isScanMacaddess = true
                             bluetoothLeScanner.startScan(filter,setting,leScanCallback)
                         }else{
+                            isScanMacaddess = false
                             bluetoothLeScanner.startScan(null,setting,leScanCallback)
                         }
                     }
@@ -148,7 +151,12 @@ class bluetoothLEDeviceFinder private constructor(){
                     scanResultInternal[address]?.let {
                         val device = VehicleDeviceManager(context)
                         try {
-                            device.connect(it).retry(3,1200).useAutoConnect(false).timeout(7000).suspend()
+                            if (isScanMacaddess){
+                                device.connect(it).retry(3,1000).useAutoConnect(false).timeout(4000).suspend()
+                            }
+                            else{
+                                device.connect(it).retry(3,1200).useAutoConnect(false).timeout(7000).suspend()
+                            }
                             device.serviceList?.let {
                                 device.lockCharacteristic?.let {
                                     serviceResult[address] = device

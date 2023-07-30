@@ -21,6 +21,7 @@ import com.sisalma.vehicleandusermanagement.model.API.VehicleData
 import com.sisalma.vehicleandusermanagement.model.bluetoothLEDeviceFinder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 class VehicleAddInfo: Fragment() {
     private val ViewModelVehicle: ViewModelVehicle by activityViewModels()
@@ -36,8 +37,14 @@ class VehicleAddInfo: Fragment() {
                 val name = view.editTextTextPersonName.text.toString()
                 val form = VehicleData(it1.VID,it1.UID,it1.BTMacAddress,name)
                 lifecycleScope.launch(Dispatchers.Main) {
+                    var timeStart: Long? = null
+                    var timeEnd: Long? = null
+                    timeStart = Instant.now().toEpochMilli()
                     ViewModelUser.addVehicle(form).let {
                         if(it){
+                            timeEnd = Instant.now().toEpochMilli()
+                            val result = timeEnd!!-timeStart!!
+                            Log.i("TimeCounter","Request tambah kendaraan dalam %s milidetik".format(result.toString()))
                             val action = VehicleAddInfoDirections.actionVehicleAddSelectionToVehicleFragment()
                             findNavController().navigate(action)
                         }

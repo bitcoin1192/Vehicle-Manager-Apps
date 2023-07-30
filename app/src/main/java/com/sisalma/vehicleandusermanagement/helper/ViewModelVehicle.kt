@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 class ViewModelVehicle(application: Application): AndroidViewModel(application) {
     private val btMan = getApplication<Application>().getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -105,6 +106,7 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
             input.keys.forEach{ keys ->
                 input[keys]?.let { list.add(it) }
             }
+
             vehicleRepository.removeFriend(selectedVID, ListMemberData(list))
             getMemberData()
         }
@@ -115,7 +117,13 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
             input.values.forEach{ memberData ->
                 list.add(memberData)
             }
+            var timeStart: Long? = null
+            var timeEnd: Long? = null
+            timeStart = Instant.now().toEpochMilli()
             vehicleRepository.addFriend(selectedVID,ListMemberData(list))
+            timeEnd = Instant.now().toEpochMilli()
+            val result = timeEnd!!-timeStart!!
+            Log.i("TimeCounter","Request tambah kendaraan dalam %s milidetik".format(result.toString()))
             formMemberList.clear()
             getMemberData()
         }
@@ -132,8 +140,14 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
     fun setDeviceLockStatus(lock: Boolean){
         Data?.let {
             viewModelScope.launch(Dispatchers.IO) {
+                var timeStart: Long? = null
+                var timeEnd: Long? = null
+                timeStart = Instant.now().toEpochMilli()
                 vehicleRepository.vehicleSetLock(false,selectedVID).let {
                     it.first?.let {
+                        timeEnd = Instant.now().toEpochMilli()
+                        val result = timeEnd!!-timeStart!!
+                        Log.i("TimeCounter","Request dan kirim Lock/Unlock berhasil dalam %s milidetik".format(result.toString()))
                         when(it){
                             is opResult.requestLockSuccess->{
                                 _currentVehicleLockStatus.postValue(it.latestStatus)
@@ -141,6 +155,9 @@ class ViewModelVehicle(application: Application): AndroidViewModel(application) 
                         }
                     }
                     it.second?.let {
+                        timeEnd = Instant.now().toEpochMilli()
+                        val result = timeEnd!!-timeStart!!
+                        Log.i("TimeCounter","Request dan kirim Lock/Unlock gagal dalam %s milidetik".format(result.toString()))
                         _error.postValue(it)
                     }
                 }
